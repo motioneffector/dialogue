@@ -28,7 +28,7 @@ function createMockFlagStore(): FlagStore {
     },
     decrement: (key: string, amount = 1) => {
       const current = (flags.get(key) as number) || 0
-      const newValue = current - amount
+      const newValue = Math.max(0, current - amount)
       flags.set(key, newValue)
       return newValue
     },

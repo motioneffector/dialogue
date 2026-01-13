@@ -1640,7 +1640,7 @@ describe('i18n Integration', () => {
       expect(state.currentNode.text).toBe('Translated Text')
     })
 
-    it('uses literal text when key doesn't exist', () => {
+    it('uses literal text when key does not exist', () => {
       const i18n = {
         t: (key: string) => key,
         hasKey: () => false,
@@ -1936,7 +1936,7 @@ describe('Edge Cases', () => {
       expect(() => runner.start(dialogue)).not.toThrow()
     })
 
-    it('history doesn't explode memory', () => {
+    it('history does not explode memory', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',

@@ -626,7 +626,7 @@ describe('runner.choose()', () => {
       expect(gameFlags.get('reached')).toBe(true)
     })
 
-    it('action errors don't break traversal', () => {
+    it('action errors do not break traversal', () => {
       const actionHandlers = {
         failingAction: () => {
           throw new Error('Action failed')

@@ -89,7 +89,9 @@ function evaluateCondition(
     const [flagName, operator, value] = condition.check
     const { scope, key } = parseFlagScope(flagName)
     const store = scope === 'game' ? gameFlags : convFlags
-    const flagValue = store.get(key)
+    // For conversation scope, strip prefix; for game scope, keep original key
+    const storeKey = scope === 'conv' ? key : flagName
+    const flagValue = store.get(storeKey)
 
     switch (operator) {
       case '==':
@@ -141,27 +143,32 @@ async function executeAction(
       case 'set': {
         const { scope, key } = parseFlagScope(action.flag)
         const store = scope === 'game' ? gameFlags : convFlags
-        store.set(key, action.value)
+        // For conversation scope, strip prefix; for game scope, keep original key
+        const storeKey = scope === 'conv' ? key : action.flag
+        store.set(storeKey, action.value)
         result = undefined
         break
       }
       case 'clear': {
         const { scope, key } = parseFlagScope(action.flag)
         const store = scope === 'game' ? gameFlags : convFlags
-        store.delete(key)
+        const storeKey = scope === 'conv' ? key : action.flag
+        store.delete(storeKey)
         result = undefined
         break
       }
       case 'increment': {
         const { scope, key } = parseFlagScope(action.flag)
         const store = scope === 'game' ? gameFlags : convFlags
-        result = store.increment(key, action.value)
+        const storeKey = scope === 'conv' ? key : action.flag
+        result = store.increment(storeKey, action.value)
         break
       }
       case 'decrement': {
         const { scope, key } = parseFlagScope(action.flag)
         const store = scope === 'game' ? gameFlags : convFlags
-        result = store.decrement(key, action.value)
+        const storeKey = scope === 'conv' ? key : action.flag
+        result = store.decrement(storeKey, action.value)
         break
       }
       case 'callback': {
@@ -176,7 +183,11 @@ async function executeAction(
 
     onActionExecuted?.(action, result)
   } catch (error) {
-    // Log error but don't break traversal
+    // For callback actions with missing handlers, re-throw
+    if (action.type === 'callback' && !actionHandlers[action.name]) {
+      throw error
+    }
+    // For other action errors, log but don't break traversal
     console.error('Action execution error:', error)
   }
 
@@ -213,7 +224,9 @@ function interpolateText(
     else {
       const { scope, key: flagKey } = parseFlagScope(key)
       const store = scope === 'game' ? context.gameFlags : context.conversationFlags
-      const flagValue = store.get(flagKey)
+      // For conversation scope, strip prefix; for game scope, keep original key
+      const storeKey = scope === 'conv' ? flagKey : key
+      const flagValue = store.get(storeKey)
       value = flagValue !== undefined ? String(flagValue) : ''
     }
 
