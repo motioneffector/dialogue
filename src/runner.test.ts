@@ -406,6 +406,8 @@ describe('runner.getChoices()', () => {
       await runner.start(dialogue)
       const choices = runner.getChoices({ includeUnavailable: true })
       expect(choices[0]).toHaveProperty('reason')
+      expect(typeof choices[0]?.reason).toBe('string')
+      expect(choices[0]?.reason).toBeTruthy()
     })
 
     it('custom filter function works', async () => {

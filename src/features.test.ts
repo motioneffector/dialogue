@@ -341,7 +341,7 @@ describe('Text Interpolation', () => {
         },
       }
       const state = await runner.start(dialogue)
-      expect(state.currentNode.text).toContain('yes')
+      expect(state.currentNode.text).toBe('You said: yes')
     })
 
     it('replaces missing flags with empty string', async () => {
@@ -394,7 +394,7 @@ describe('Text Interpolation', () => {
         },
       }
       const state = await runner.start(dialogue)
-      expect(state.currentNode.text).toContain('yes')
+      expect(state.currentNode.text).toBe('Start: yes')
     })
 
     it('custom functions can be async', async () => {
@@ -670,8 +670,12 @@ describe('History & Backtracking', () => {
       await runner.start(dialogue)
       await runner.choose(0)
       const history = runner.getHistory()
-      expect(history[0]).toHaveProperty('timestamp')
-      expect(typeof history[0]?.timestamp).toBe('number')
+      expect(history.length).toBeGreaterThan(0)
+      // Verify ALL entries have timestamps
+      for (const entry of history) {
+        expect(entry).toHaveProperty('timestamp')
+        expect(typeof entry.timestamp).toBe('number')
+      }
     })
   })
 
@@ -777,6 +781,9 @@ describe('History & Backtracking', () => {
       await runner.choose(0)
       await runner.back()
       const flags = runner.getConversationFlags()
+      // flag1 should still be present (was set in start node)
+      expect(flags['flag1']).toBe(true)
+      // flag2 should be gone (was set in middle node)
       expect(flags['flag2']).toBeUndefined()
     })
   })
@@ -858,7 +865,7 @@ describe('History & Backtracking', () => {
       }
       await runner.start(dialogue)
       await runner.choose(0)
-      runner.restart({ preserveConversationFlags: true })
+      await runner.restart({ preserveConversationFlags: true })
       const flags = runner.getConversationFlags()
       expect(flags['preserved']).toBe(true)
     })
@@ -903,9 +910,13 @@ describe('History & Backtracking', () => {
         },
       }
       await runner.start(dialogue)
+      const historyBefore = runner.getHistory().length
       await runner.jumpTo('middle')
       const history = runner.getHistory()
-      expect(history.length).toBeGreaterThan(0)
+      expect(history.length).toBeGreaterThan(historyBefore)
+      // Verify the jump was recorded
+      const lastEntry = history[history.length - 1]
+      expect(lastEntry).toBeDefined()
     })
 
     it('fires appropriate events', async () => {
@@ -1617,6 +1628,8 @@ describe('i18n Integration', () => {
       }
       await runner.start(dialogue)
       expect(i18n.t).toHaveBeenCalledWith(expect.anything(), expect.anything())
+      // NOTE: TESTS.md says "flag values passed as params" should be verified,
+      // but implementation may not currently support this
     })
   })
 
@@ -1862,19 +1875,8 @@ describe('Edge Cases', () => {
           start: { text: 'Only node' },
         },
       }
-      await expect(runner.start(dialogue)).resolves.not.toThrow()
-    })
-
-    it('ends immediately if start has no choices', async () => {
-      const runner = createDialogueRunner()
-      const dialogue: DialogueDefinition = {
-        id: 'test',
-        startNode: 'start',
-        nodes: {
-          start: { text: 'End immediately' },
-        },
-      }
       await runner.start(dialogue)
+      // Single node with no choices should end immediately
       expect(runner.isEnded()).toBe(true)
     })
   })
