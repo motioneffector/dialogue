@@ -205,11 +205,11 @@ export interface DialogueRunner {
   isEnded(): boolean
   getCurrentNode(): NodeDefinition | null
   getHistory(): HistoryEntry[]
-  back(): void
+  back(): void | Promise<void>
   restart(options?: RestartOptions): DialogueState | Promise<DialogueState>
-  jumpTo(nodeId: string): void
+  jumpTo(nodeId: string): void | Promise<void>
   serialize(): SerializedState
-  deserialize(state: SerializedState): void
+  deserialize(state: SerializedState): void | Promise<void>
   getConversationFlags(): Record<string, FlagValue>
   clearConversationFlags(): void
   on(
