@@ -260,6 +260,25 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
     throw new ValidationError('gameFlags must be a valid FlagStore', 'gameFlags')
   }
 
+  // Validate actionHandlers
+  if (actionHandlers) {
+    for (const [key, handler] of Object.entries(actionHandlers)) {
+      if (typeof handler !== 'function') {
+        throw new ValidationError(`actionHandler "${key}" must be a function`, 'actionHandlers')
+      }
+    }
+  }
+
+  // Validate i18n adapter
+  if (i18n) {
+    if (typeof i18n.t !== 'function') {
+      throw new ValidationError('i18n adapter must have a "t" method', 'i18n')
+    }
+    if (typeof i18n.hasKey !== 'function') {
+      throw new ValidationError('i18n adapter must have a "hasKey" method', 'i18n')
+    }
+  }
+
   // State
   let currentDialogue: DialogueDefinition | null = null
   let currentNodeId: string | null = null
@@ -434,7 +453,7 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
 
       // Filter by conditions and disabled state
       return choices.filter(choice => {
-        if (choice.disabled) return true // Include disabled choices by default
+        if (choice.disabled) return false // Exclude disabled choices by default
 
         if (!choice.conditions) return true
 
@@ -553,6 +572,9 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
     },
 
     getCurrentNode: () => {
+      if (runner.isEnded()) {
+        return null
+      }
       return currentInterpolatedNode
     },
 
