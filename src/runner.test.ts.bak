@@ -340,7 +340,7 @@ describe('runner.getChoices()', () => {
   })
 
   describe('Filtering Options', () => {
-    it('includeUnavailable: true returns all choices', async () => {
+    it('includeUnavailable: true returns all choices', () => {
       const gameFlags = createMockFlagStore()
       gameFlags.set('hasKey', false)
       const runner = createDialogueRunner({ gameFlags })
@@ -359,12 +359,12 @@ describe('runner.getChoices()', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       const choices = runner.getChoices({ includeUnavailable: true })
       expect(choices.length).toBe(2)
     })
 
-    it('unavailable choices have available: false', async () => {
+    it('unavailable choices have available: false', () => {
       const gameFlags = createMockFlagStore()
       gameFlags.set('hasKey', false)
       const runner = createDialogueRunner({ gameFlags })
@@ -381,12 +381,12 @@ describe('runner.getChoices()', () => {
           opened: { text: 'Opened' },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       const choices = runner.getChoices({ includeUnavailable: true })
       expect(choices[0]).toHaveProperty('available', false)
     })
 
-    it('unavailable choices include reason', async () => {
+    it('unavailable choices include reason', () => {
       const gameFlags = createMockFlagStore()
       gameFlags.set('hasKey', false)
       const runner = createDialogueRunner({ gameFlags })
@@ -403,15 +403,15 @@ describe('runner.getChoices()', () => {
           opened: { text: 'Opened' },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       const choices = runner.getChoices({ includeUnavailable: true })
       expect(choices[0]).toHaveProperty('reason')
     })
 
-    it('custom filter function works', async () => {
+    it('custom filter function works', () => {
       const runner = createDialogueRunner()
       const dialogue = createTestDialogue()
-      await runner.start(dialogue)
+      runner.start(dialogue)
       const choices = runner.getChoices({
         filter: choice => choice.text === 'Continue',
       })
@@ -419,7 +419,7 @@ describe('runner.getChoices()', () => {
       expect(choices[0]?.text).toBe('Continue')
     })
 
-    it('filter by tags works', async () => {
+    it('filter by tags works', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -435,7 +435,7 @@ describe('runner.getChoices()', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       const choices = runner.getChoices({
         filter: choice => choice.tags?.includes('important') ?? false,
       })
@@ -445,7 +445,7 @@ describe('runner.getChoices()', () => {
   })
 
   describe('Disabled Choices', () => {
-    it('disabled: true choices excluded by default', async () => {
+    it('disabled: true choices excluded by default', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -461,13 +461,13 @@ describe('runner.getChoices()', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       const choices = runner.getChoices()
       expect(choices.length).toBe(1)
       expect(choices[0]?.text).toBe('Enabled')
     })
 
-    it('includeDisabled: true shows disabled choices', async () => {
+    it('includeDisabled: true shows disabled choices', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -483,12 +483,12 @@ describe('runner.getChoices()', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       const choices = runner.getChoices({ includeDisabled: true })
       expect(choices.length).toBe(2)
     })
 
-    it('disabled choices have disabled: true flag', async () => {
+    it('disabled choices have disabled: true flag', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -501,12 +501,12 @@ describe('runner.getChoices()', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       const choices = runner.getChoices({ includeDisabled: true })
       expect(choices[0]).toHaveProperty('disabled', true)
     })
 
-    it('disabled choices include disabledText', async () => {
+    it('disabled choices include disabledText', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -519,12 +519,12 @@ describe('runner.getChoices()', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       const choices = runner.getChoices({ includeDisabled: true })
       expect(choices[0]).toHaveProperty('disabledText', 'Not yet')
     })
 
-    it('handles node with only disabled choices', async () => {
+    it('handles node with only disabled choices', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -540,7 +540,7 @@ describe('runner.getChoices()', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       const choices = runner.getChoices()
       expect(choices.length).toBe(0)
     })
@@ -744,14 +744,14 @@ describe('runner.choose()', () => {
 })
 
 describe('runner.isEnded()', () => {
-  it('returns false after start', async () => {
+  it('returns false after start', () => {
     const runner = createDialogueRunner()
     const dialogue = createTestDialogue()
-    await runner.start(dialogue)
+    runner.start(dialogue)
     expect(runner.isEnded()).toBe(false)
   })
 
-  it('returns true at terminal node', async () => {
+  it('returns true at terminal node', () => {
     const runner = createDialogueRunner()
     const dialogue: DialogueDefinition = {
       id: 'test',
@@ -767,12 +767,12 @@ describe('runner.isEnded()', () => {
         },
       },
     }
-    await runner.start(dialogue)
-    await runner.choose(0)
+    runner.start(dialogue)
+    runner.choose(0)
     expect(runner.isEnded()).toBe(true)
   })
 
-  it('returns true for node with isEnd: true', async () => {
+  it('returns true for node with isEnd: true', () => {
     const runner = createDialogueRunner()
     const dialogue: DialogueDefinition = {
       id: 'test',
@@ -784,11 +784,11 @@ describe('runner.isEnded()', () => {
         },
       },
     }
-    await runner.start(dialogue)
+    runner.start(dialogue)
     expect(runner.isEnded()).toBe(true)
   })
 
-  it('returns true for node with no choices and no next', async () => {
+  it('returns true for node with no choices and no next', () => {
     const runner = createDialogueRunner()
     const dialogue: DialogueDefinition = {
       id: 'test',
@@ -799,16 +799,16 @@ describe('runner.isEnded()', () => {
         },
       },
     }
-    await runner.start(dialogue)
+    runner.start(dialogue)
     expect(runner.isEnded()).toBe(true)
   })
 })
 
 describe('runner.getCurrentNode()', () => {
-  it('returns current node definition', async () => {
+  it('returns current node definition', () => {
     const runner = createDialogueRunner()
     const dialogue = createTestDialogue()
-    await runner.start(dialogue)
+    runner.start(dialogue)
     const node = runner.getCurrentNode()
     expect(node?.text).toBe('Welcome!')
   })
@@ -819,7 +819,7 @@ describe('runner.getCurrentNode()', () => {
     expect(node).toBeNull()
   })
 
-  it('returns null if dialogue ended', async () => {
+  it('returns null if dialogue ended', () => {
     const runner = createDialogueRunner()
     const dialogue: DialogueDefinition = {
       id: 'test',
@@ -835,13 +835,13 @@ describe('runner.getCurrentNode()', () => {
         },
       },
     }
-    await runner.start(dialogue)
-    await runner.choose(0)
+    runner.start(dialogue)
+    runner.choose(0)
     const node = runner.getCurrentNode()
     expect(node).toBeNull()
   })
 
-  it('includes interpolated text', async () => {
+  it('includes interpolated text', () => {
     const gameFlags = createMockFlagStore()
     gameFlags.set('name', 'Alice')
     const runner = createDialogueRunner({ gameFlags })
@@ -854,7 +854,7 @@ describe('runner.getCurrentNode()', () => {
         },
       },
     }
-    await runner.start(dialogue)
+    runner.start(dialogue)
     const node = runner.getCurrentNode()
     expect(node?.text).toBe('Hello Alice!')
   })

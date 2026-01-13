@@ -139,6 +139,7 @@ export interface DialogueRunnerOptions {
  */
 export interface GetChoicesOptions {
   includeUnavailable?: boolean
+  includeDisabled?: boolean
   filter?: (choice: ChoiceDefinition) => boolean
 }
 

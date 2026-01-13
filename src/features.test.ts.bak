@@ -67,7 +67,7 @@ function createMockFlagStore(): FlagStore {
 
 describe('Conditions', () => {
   describe('Integration with @motioneffector/flags', () => {
-    it('evaluates simple equality check', async () => {
+    it('evaluates simple equality check', () => {
       const gameFlags = createMockFlagStore()
       gameFlags.set('hasKey', true)
       const runner = createDialogueRunner({ gameFlags })
@@ -84,12 +84,12 @@ describe('Conditions', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       const choices = runner.getChoices()
       expect(choices.length).toBe(1)
     })
 
-    it('evaluates numeric comparisons', async () => {
+    it('evaluates numeric comparisons', () => {
       const gameFlags = createMockFlagStore()
       gameFlags.set('gold', 100)
       const runner = createDialogueRunner({ gameFlags })
@@ -106,12 +106,12 @@ describe('Conditions', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       const choices = runner.getChoices()
       expect(choices.length).toBe(1)
     })
 
-    it('evaluates and conditions', async () => {
+    it('evaluates and conditions', () => {
       const gameFlags = createMockFlagStore()
       gameFlags.set('hasKey', true)
       gameFlags.set('hasMap', true)
@@ -138,12 +138,12 @@ describe('Conditions', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       const choices = runner.getChoices()
       expect(choices.length).toBe(1)
     })
 
-    it('evaluates or conditions', async () => {
+    it('evaluates or conditions', () => {
       const gameFlags = createMockFlagStore()
       gameFlags.set('hasKey', false)
       gameFlags.set('hasLockpick', true)
@@ -170,12 +170,12 @@ describe('Conditions', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       const choices = runner.getChoices()
       expect(choices.length).toBe(1)
     })
 
-    it('evaluates not conditions', async () => {
+    it('evaluates not conditions', () => {
       const gameFlags = createMockFlagStore()
       gameFlags.set('isDead', false)
       const runner = createDialogueRunner({ gameFlags })
@@ -196,12 +196,12 @@ describe('Conditions', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       const choices = runner.getChoices()
       expect(choices.length).toBe(1)
     })
 
-    it('handles missing flags as undefined', async () => {
+    it('handles missing flags as undefined', () => {
       const gameFlags = createMockFlagStore()
       const runner = createDialogueRunner({ gameFlags })
       const dialogue: DialogueDefinition = {
@@ -221,14 +221,14 @@ describe('Conditions', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       const choices = runner.getChoices()
       expect(choices.length).toBe(0)
     })
   })
 
   describe('Choice Filtering', () => {
-    it('choice with passing condition is available', async () => {
+    it('choice with passing condition is available', () => {
       const gameFlags = createMockFlagStore()
       gameFlags.set('hasAccess', true)
       const runner = createDialogueRunner({ gameFlags })
@@ -245,12 +245,12 @@ describe('Conditions', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       const choices = runner.getChoices()
       expect(choices.length).toBe(1)
     })
 
-    it('choice with failing condition is unavailable', async () => {
+    it('choice with failing condition is unavailable', () => {
       const gameFlags = createMockFlagStore()
       gameFlags.set('hasAccess', false)
       const runner = createDialogueRunner({ gameFlags })
@@ -267,12 +267,12 @@ describe('Conditions', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       const choices = runner.getChoices()
       expect(choices.length).toBe(0)
     })
 
-    it('choice without condition is always available', async () => {
+    it('choice without condition is always available', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -285,7 +285,7 @@ describe('Conditions', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       const choices = runner.getChoices()
       expect(choices.length).toBe(1)
     })
@@ -294,7 +294,7 @@ describe('Conditions', () => {
 
 describe('Text Interpolation', () => {
   describe('Flag Interpolation', () => {
-    it('replaces {{flagName}} with game flag value', async () => {
+    it('replaces {{flagName}} with game flag value', () => {
       const gameFlags = createMockFlagStore()
       gameFlags.set('playerName', 'Hero')
       const runner = createDialogueRunner({ gameFlags })
@@ -307,11 +307,11 @@ describe('Text Interpolation', () => {
           },
         },
       }
-      const state = await runner.start(dialogue)
+      const state = runner.start(dialogue)
       expect(state.currentNode.text).toBe('Hello Hero!')
     })
 
-    it('replaces {{game:flagName}} with game flag value', async () => {
+    it('replaces {{game:flagName}} with game flag value', () => {
       const gameFlags = createMockFlagStore()
       gameFlags.set('game:score', 1000)
       const runner = createDialogueRunner({ gameFlags })
@@ -324,11 +324,11 @@ describe('Text Interpolation', () => {
           },
         },
       }
-      const state = await runner.start(dialogue)
+      const state = runner.start(dialogue)
       expect(state.currentNode.text).toBe('Score: 1000')
     })
 
-    it('replaces {{conv:flagName}} with conversation flag value', async () => {
+    it('replaces {{conv:flagName}} with conversation flag value', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -340,11 +340,11 @@ describe('Text Interpolation', () => {
           },
         },
       }
-      const state = await runner.start(dialogue)
+      const state = runner.start(dialogue)
       expect(state.currentNode.text).toContain('yes')
     })
 
-    it('replaces missing flags with empty string', async () => {
+    it('replaces missing flags with empty string', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -355,13 +355,13 @@ describe('Text Interpolation', () => {
           },
         },
       }
-      const state = await runner.start(dialogue)
+      const state = runner.start(dialogue)
       expect(state.currentNode.text).toBe('Hello !')
     })
   })
 
   describe('Custom Interpolation', () => {
-    it('replaces with custom interpolation functions', async () => {
+    it('replaces with custom interpolation functions', () => {
       const interpolation = {
         time: () => '12:00',
       }
@@ -375,11 +375,11 @@ describe('Text Interpolation', () => {
           },
         },
       }
-      const state = await runner.start(dialogue)
+      const state = runner.start(dialogue)
       expect(state.currentNode.text).toBe('The time is 12:00')
     })
 
-    it('custom functions receive context', async () => {
+    it('custom functions receive context', () => {
       const interpolation = {
         nodeText: (ctx: any) => ctx.currentNode.text.includes('Start') ? 'yes' : 'no',
       }
@@ -393,7 +393,7 @@ describe('Text Interpolation', () => {
           },
         },
       }
-      const state = await runner.start(dialogue)
+      const state = runner.start(dialogue)
       expect(state.currentNode.text).toContain('yes')
     })
 
@@ -420,7 +420,7 @@ describe('Text Interpolation', () => {
   })
 
   describe('Speaker Interpolation', () => {
-    it('{{speaker}} replaced with current speaker name', async () => {
+    it('{{speaker}} replaced with current speaker name', () => {
       const speakers = {
         npc: { name: 'Marcus' },
       }
@@ -435,7 +435,7 @@ describe('Text Interpolation', () => {
           },
         },
       }
-      const state = await runner.start(dialogue)
+      const state = runner.start(dialogue)
       expect(state.currentNode.text).toBe('I am Marcus')
     })
   })
@@ -443,7 +443,7 @@ describe('Text Interpolation', () => {
 
 describe('Speaker System', () => {
   describe('Speaker Resolution', () => {
-    it('resolves speaker id to speaker object', async () => {
+    it('resolves speaker id to speaker object', () => {
       const onNodeEnter = vi.fn()
       const speakers = {
         npc: { name: 'Marcus', portrait: 'marcus.png' },
@@ -459,13 +459,13 @@ describe('Speaker System', () => {
           },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       expect(onNodeEnter).toHaveBeenCalled()
       const lastCall = onNodeEnter.mock.calls[0]
       expect(lastCall?.[1]).toEqual({ name: 'Marcus', portrait: 'marcus.png' })
     })
 
-    it('passes speaker to nodeEnter event', async () => {
+    it('passes speaker to nodeEnter event', () => {
       const onNodeEnter = vi.fn()
       const speakers = {
         npc: { name: 'Test NPC' },
@@ -481,12 +481,12 @@ describe('Speaker System', () => {
           },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       expect(onNodeEnter).toHaveBeenCalled()
       expect(onNodeEnter.mock.calls[0]?.[1]).toBeDefined()
     })
 
-    it('handles missing speaker gracefully', async () => {
+    it('handles missing speaker gracefully', () => {
       const onNodeEnter = vi.fn()
       const runner = createDialogueRunner({ onNodeEnter })
       const dialogue: DialogueDefinition = {
@@ -499,12 +499,12 @@ describe('Speaker System', () => {
           },
         },
       }
-      await expect(runner.start(dialogue)).resolves.not.toThrow()
+      expect(() => runner.start(dialogue)).not.toThrow()
     })
   })
 
   describe('Speaker Metadata', () => {
-    it('includes name in speaker', async () => {
+    it('includes name in speaker', () => {
       const onNodeEnter = vi.fn()
       const speakers = {
         npc: { name: 'Marcus' },
@@ -520,12 +520,12 @@ describe('Speaker System', () => {
           },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       const speaker = onNodeEnter.mock.calls[0]?.[1]
       expect(speaker).toHaveProperty('name', 'Marcus')
     })
 
-    it('includes portrait in speaker', async () => {
+    it('includes portrait in speaker', () => {
       const onNodeEnter = vi.fn()
       const speakers = {
         npc: { name: 'Marcus', portrait: 'portrait.png' },
@@ -541,12 +541,12 @@ describe('Speaker System', () => {
           },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       const speaker = onNodeEnter.mock.calls[0]?.[1]
       expect(speaker).toHaveProperty('portrait', 'portrait.png')
     })
 
-    it('includes color in speaker', async () => {
+    it('includes color in speaker', () => {
       const onNodeEnter = vi.fn()
       const speakers = {
         npc: { name: 'Marcus', color: '#ff0000' },
@@ -562,12 +562,12 @@ describe('Speaker System', () => {
           },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       const speaker = onNodeEnter.mock.calls[0]?.[1]
       expect(speaker).toHaveProperty('color', '#ff0000')
     })
 
-    it('includes custom properties', async () => {
+    it('includes custom properties', () => {
       const onNodeEnter = vi.fn()
       const speakers = {
         npc: { name: 'Marcus', customProp: 'customValue' },
@@ -583,7 +583,7 @@ describe('Speaker System', () => {
           },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       const speaker = onNodeEnter.mock.calls[0]?.[1]
       expect(speaker).toHaveProperty('customProp', 'customValue')
     })
@@ -592,7 +592,7 @@ describe('Speaker System', () => {
 
 describe('History & Backtracking', () => {
   describe('runner.getHistory()', () => {
-    it('returns empty array before any choices', async () => {
+    it('returns empty array before any choices', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -605,12 +605,12 @@ describe('History & Backtracking', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       const history = runner.getHistory()
       expect(history.length).toBe(0)
     })
 
-    it('records each node visited', async () => {
+    it('records each node visited', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -627,14 +627,14 @@ describe('History & Backtracking', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
-      await runner.choose(0)
-      await runner.choose(0)
+      runner.start(dialogue)
+      runner.choose(0)
+      runner.choose(0)
       const history = runner.getHistory()
       expect(history.length).toBe(2)
     })
 
-    it('records choice made at each node', async () => {
+    it('records choice made at each node', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -647,14 +647,14 @@ describe('History & Backtracking', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
-      await runner.choose(0)
+      runner.start(dialogue)
+      runner.choose(0)
       const history = runner.getHistory()
       expect(history[0]).toHaveProperty('choice')
       expect(history[0]?.choice?.text).toBe('Go')
     })
 
-    it('includes timestamp for each entry', async () => {
+    it('includes timestamp for each entry', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -667,8 +667,8 @@ describe('History & Backtracking', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
-      await runner.choose(0)
+      runner.start(dialogue)
+      runner.choose(0)
       const history = runner.getHistory()
       expect(history[0]).toHaveProperty('timestamp')
       expect(typeof history[0]?.timestamp).toBe('number')
@@ -676,7 +676,7 @@ describe('History & Backtracking', () => {
   })
 
   describe('runner.back()', () => {
-    it('returns to previous node', async () => {
+    it('returns to previous node', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -689,14 +689,14 @@ describe('History & Backtracking', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
-      await runner.choose(0)
-      await runner.back()
+      runner.start(dialogue)
+      runner.choose(0)
+      runner.back()
       const node = runner.getCurrentNode()
       expect(node?.text).toBe('Start')
     })
 
-    it('removes last history entry', async () => {
+    it('removes last history entry', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -713,16 +713,16 @@ describe('History & Backtracking', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
-      await runner.choose(0)
-      await runner.choose(0)
+      runner.start(dialogue)
+      runner.choose(0)
+      runner.choose(0)
       const lengthBefore = runner.getHistory().length
-      await runner.back()
+      runner.back()
       const lengthAfter = runner.getHistory().length
       expect(lengthAfter).toBe(lengthBefore - 1)
     })
 
-    it('does nothing if no history', async () => {
+    it('does nothing if no history', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -731,11 +731,11 @@ describe('History & Backtracking', () => {
           start: { text: 'Start' },
         },
       }
-      await runner.start(dialogue)
-      await expect(runner.back()).resolves.not.toThrow()
+      runner.start(dialogue)
+      expect(() => runner.back()).not.toThrow()
     })
 
-    it('fires nodeEnter for restored node', async () => {
+    it('fires nodeEnter for restored node', () => {
       const onNodeEnter = vi.fn()
       const runner = createDialogueRunner({ onNodeEnter })
       const dialogue: DialogueDefinition = {
@@ -749,14 +749,14 @@ describe('History & Backtracking', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
-      await runner.choose(0)
+      runner.start(dialogue)
+      runner.choose(0)
       onNodeEnter.mockClear()
-      await runner.back()
+      runner.back()
       expect(onNodeEnter).toHaveBeenCalled()
     })
 
-    it('restores conversation flags to previous state', async () => {
+    it('restores conversation flags to previous state', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -773,16 +773,16 @@ describe('History & Backtracking', () => {
           },
         },
       }
-      await runner.start(dialogue)
-      await runner.choose(0)
-      await runner.back()
+      runner.start(dialogue)
+      runner.choose(0)
+      runner.back()
       const flags = runner.getConversationFlags()
       expect(flags['flag2']).toBeUndefined()
     })
   })
 
   describe('runner.restart()', () => {
-    it('returns to start node', async () => {
+    it('returns to start node', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -795,13 +795,13 @@ describe('History & Backtracking', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
-      await runner.choose(0)
-      const state = await runner.restart()
+      runner.start(dialogue)
+      runner.choose(0)
+      const state = runner.restart()
       expect(state.currentNode.text).toBe('Start')
     })
 
-    it('clears history', async () => {
+    it('clears history', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -814,14 +814,14 @@ describe('History & Backtracking', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
-      await runner.choose(0)
-      await runner.restart()
+      runner.start(dialogue)
+      runner.choose(0)
+      runner.restart()
       const history = runner.getHistory()
       expect(history.length).toBe(0)
     })
 
-    it('clears conversation flags', async () => {
+    it('clears conversation flags', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -835,14 +835,14 @@ describe('History & Backtracking', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
-      await runner.choose(0)
-      await runner.restart()
+      runner.start(dialogue)
+      runner.choose(0)
+      runner.restart()
       const flags = runner.getConversationFlags()
       expect(Object.keys(flags).length).toBe(0)
     })
 
-    it('respects preserveConversationFlags option', async () => {
+    it('respects preserveConversationFlags option', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -856,8 +856,8 @@ describe('History & Backtracking', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
-      await runner.choose(0)
+      runner.start(dialogue)
+      runner.choose(0)
       runner.restart({ preserveConversationFlags: true })
       const flags = runner.getConversationFlags()
       expect(flags['preserved']).toBe(true)
@@ -865,7 +865,7 @@ describe('History & Backtracking', () => {
   })
 
   describe('runner.jumpTo()', () => {
-    it('jumps to specified node', async () => {
+    it('jumps to specified node', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -882,13 +882,13 @@ describe('History & Backtracking', () => {
           },
         },
       }
-      await runner.start(dialogue)
-      await runner.jumpTo('middle')
+      runner.start(dialogue)
+      runner.jumpTo('middle')
       const node = runner.getCurrentNode()
       expect(node?.text).toBe('Middle')
     })
 
-    it('adds to history', async () => {
+    it('adds to history', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -902,13 +902,13 @@ describe('History & Backtracking', () => {
           },
         },
       }
-      await runner.start(dialogue)
-      await runner.jumpTo('middle')
+      runner.start(dialogue)
+      runner.jumpTo('middle')
       const history = runner.getHistory()
       expect(history.length).toBeGreaterThan(0)
     })
 
-    it('fires appropriate events', async () => {
+    it('fires appropriate events', () => {
       const onNodeEnter = vi.fn()
       const runner = createDialogueRunner({ onNodeEnter })
       const dialogue: DialogueDefinition = {
@@ -923,13 +923,13 @@ describe('History & Backtracking', () => {
           },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       onNodeEnter.mockClear()
-      await runner.jumpTo('middle')
+      runner.jumpTo('middle')
       expect(onNodeEnter).toHaveBeenCalled()
     })
 
-    it('throws ValidationError for invalid node', async () => {
+    it('throws ValidationError for invalid node', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -940,15 +940,15 @@ describe('History & Backtracking', () => {
           },
         },
       }
-      await runner.start(dialogue)
-      await expect(runner.jumpTo('nonexistent')).rejects.toThrow()
+      runner.start(dialogue)
+      expect(() => runner.jumpTo('nonexistent')).toThrow()
     })
   })
 })
 
 describe('Events', () => {
   describe('dialogueStart', () => {
-    it('fires when dialogue starts', async () => {
+    it('fires when dialogue starts', () => {
       const onDialogueStart = vi.fn()
       const runner = createDialogueRunner({ onDialogueStart })
       const dialogue: DialogueDefinition = {
@@ -956,11 +956,11 @@ describe('Events', () => {
         startNode: 'start',
         nodes: { start: { text: 'Start' } },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       expect(onDialogueStart).toHaveBeenCalled()
     })
 
-    it('includes dialogue definition', async () => {
+    it('includes dialogue definition', () => {
       const onDialogueStart = vi.fn()
       const runner = createDialogueRunner({ onDialogueStart })
       const dialogue: DialogueDefinition = {
@@ -968,13 +968,13 @@ describe('Events', () => {
         startNode: 'start',
         nodes: { start: { text: 'Start' } },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       expect(onDialogueStart).toHaveBeenCalledWith(dialogue)
     })
   })
 
   describe('dialogueEnd', () => {
-    it('fires when dialogue ends', async () => {
+    it('fires when dialogue ends', () => {
       const onDialogueEnd = vi.fn()
       const runner = createDialogueRunner({ onDialogueEnd })
       const dialogue: DialogueDefinition = {
@@ -991,12 +991,12 @@ describe('Events', () => {
           },
         },
       }
-      await runner.start(dialogue)
-      await runner.choose(0)
+      runner.start(dialogue)
+      runner.choose(0)
       expect(onDialogueEnd).toHaveBeenCalled()
     })
 
-    it('includes dialogue id', async () => {
+    it('includes dialogue id', () => {
       const onDialogueEnd = vi.fn()
       const runner = createDialogueRunner({ onDialogueEnd })
       const dialogue: DialogueDefinition = {
@@ -1009,11 +1009,11 @@ describe('Events', () => {
           },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       expect(onDialogueEnd).toHaveBeenCalledWith('test-id', expect.anything())
     })
 
-    it('includes end node', async () => {
+    it('includes end node', () => {
       const onDialogueEnd = vi.fn()
       const runner = createDialogueRunner({ onDialogueEnd })
       const dialogue: DialogueDefinition = {
@@ -1026,14 +1026,14 @@ describe('Events', () => {
           },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       const endNode = onDialogueEnd.mock.calls[0]?.[1]
       expect(endNode).toHaveProperty('text', 'End Node')
     })
   })
 
   describe('nodeEnter', () => {
-    it('fires when entering node', async () => {
+    it('fires when entering node', () => {
       const onNodeEnter = vi.fn()
       const runner = createDialogueRunner({ onNodeEnter })
       const dialogue: DialogueDefinition = {
@@ -1041,11 +1041,11 @@ describe('Events', () => {
         startNode: 'start',
         nodes: { start: { text: 'Start' } },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       expect(onNodeEnter).toHaveBeenCalled()
     })
 
-    it('includes node definition', async () => {
+    it('includes node definition', () => {
       const onNodeEnter = vi.fn()
       const runner = createDialogueRunner({ onNodeEnter })
       const dialogue: DialogueDefinition = {
@@ -1053,11 +1053,11 @@ describe('Events', () => {
         startNode: 'start',
         nodes: { start: { text: 'Start' } },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       expect(onNodeEnter).toHaveBeenCalledWith(expect.objectContaining({ text: 'Start' }), undefined)
     })
 
-    it('includes speaker if present', async () => {
+    it('includes speaker if present', () => {
       const onNodeEnter = vi.fn()
       const speakers = { npc: { name: 'NPC' } }
       const runner = createDialogueRunner({ onNodeEnter, speakers })
@@ -1066,13 +1066,13 @@ describe('Events', () => {
         startNode: 'start',
         nodes: { start: { text: 'Start', speaker: 'npc' } },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       expect(onNodeEnter).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ name: 'NPC' }))
     })
   })
 
   describe('nodeExit', () => {
-    it('fires when leaving node', async () => {
+    it('fires when leaving node', () => {
       const onNodeExit = vi.fn()
       const runner = createDialogueRunner({ onNodeExit })
       const dialogue: DialogueDefinition = {
@@ -1086,12 +1086,12 @@ describe('Events', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
-      await runner.choose(0)
+      runner.start(dialogue)
+      runner.choose(0)
       expect(onNodeExit).toHaveBeenCalled()
     })
 
-    it('includes node definition', async () => {
+    it('includes node definition', () => {
       const onNodeExit = vi.fn()
       const runner = createDialogueRunner({ onNodeExit })
       const dialogue: DialogueDefinition = {
@@ -1105,14 +1105,14 @@ describe('Events', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
-      await runner.choose(0)
+      runner.start(dialogue)
+      runner.choose(0)
       expect(onNodeExit).toHaveBeenCalledWith(expect.objectContaining({ text: 'Start' }))
     })
   })
 
   describe('choiceSelected', () => {
-    it('fires when choice made', async () => {
+    it('fires when choice made', () => {
       const onChoiceSelected = vi.fn()
       const runner = createDialogueRunner({ onChoiceSelected })
       const dialogue: DialogueDefinition = {
@@ -1126,12 +1126,12 @@ describe('Events', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
-      await runner.choose(0)
+      runner.start(dialogue)
+      runner.choose(0)
       expect(onChoiceSelected).toHaveBeenCalled()
     })
 
-    it('includes choice definition', async () => {
+    it('includes choice definition', () => {
       const onChoiceSelected = vi.fn()
       const runner = createDialogueRunner({ onChoiceSelected })
       const dialogue: DialogueDefinition = {
@@ -1145,12 +1145,12 @@ describe('Events', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
-      await runner.choose(0)
+      runner.start(dialogue)
+      runner.choose(0)
       expect(onChoiceSelected).toHaveBeenCalledWith(expect.objectContaining({ text: 'Go' }), 0)
     })
 
-    it('includes choice index', async () => {
+    it('includes choice index', () => {
       const onChoiceSelected = vi.fn()
       const runner = createDialogueRunner({ onChoiceSelected })
       const dialogue: DialogueDefinition = {
@@ -1164,14 +1164,14 @@ describe('Events', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
-      await runner.choose(0)
+      runner.start(dialogue)
+      runner.choose(0)
       expect(onChoiceSelected).toHaveBeenCalledWith(expect.anything(), 0)
     })
   })
 
   describe('actionExecuted', () => {
-    it('fires when action runs', async () => {
+    it('fires when action runs', () => {
       const onActionExecuted = vi.fn()
       const gameFlags = createMockFlagStore()
       const runner = createDialogueRunner({ gameFlags, onActionExecuted })
@@ -1185,11 +1185,11 @@ describe('Events', () => {
           },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       expect(onActionExecuted).toHaveBeenCalled()
     })
 
-    it('includes action definition', async () => {
+    it('includes action definition', () => {
       const onActionExecuted = vi.fn()
       const gameFlags = createMockFlagStore()
       const runner = createDialogueRunner({ gameFlags, onActionExecuted })
@@ -1203,11 +1203,11 @@ describe('Events', () => {
           },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       expect(onActionExecuted).toHaveBeenCalledWith(expect.objectContaining({ type: 'set' }), expect.anything())
     })
 
-    it('includes action result', async () => {
+    it('includes action result', () => {
       const onActionExecuted = vi.fn()
       const handler = () => 'result'
       const runner = createDialogueRunner({
@@ -1224,13 +1224,13 @@ describe('Events', () => {
           },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       expect(onActionExecuted).toHaveBeenCalledWith(expect.anything(), 'result')
     })
   })
 
   describe('conditionEvaluated', () => {
-    it('fires when condition checked', async () => {
+    it('fires when condition checked', () => {
       const onConditionEvaluated = vi.fn()
       const gameFlags = createMockFlagStore()
       gameFlags.set('test', true)
@@ -1248,12 +1248,12 @@ describe('Events', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       runner.getChoices()
       expect(onConditionEvaluated).toHaveBeenCalled()
     })
 
-    it('includes condition', async () => {
+    it('includes condition', () => {
       const onConditionEvaluated = vi.fn()
       const gameFlags = createMockFlagStore()
       gameFlags.set('test', true)
@@ -1271,12 +1271,12 @@ describe('Events', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       runner.getChoices()
       expect(onConditionEvaluated).toHaveBeenCalledWith(expect.objectContaining({ check: expect.anything() }), expect.anything())
     })
 
-    it('includes result boolean', async () => {
+    it('includes result boolean', () => {
       const onConditionEvaluated = vi.fn()
       const gameFlags = createMockFlagStore()
       gameFlags.set('test', true)
@@ -1294,7 +1294,7 @@ describe('Events', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       runner.getChoices()
       expect(onConditionEvaluated).toHaveBeenCalledWith(expect.anything(), true)
     })
@@ -1303,43 +1303,43 @@ describe('Events', () => {
 
 describe('Serialization', () => {
   describe('runner.serialize()', () => {
-    it('returns JSON-compatible object', async () => {
+    it('returns JSON-compatible object', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
         startNode: 'start',
         nodes: { start: { text: 'Start' } },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       const state = runner.serialize()
       expect(() => JSON.stringify(state)).not.toThrow()
     })
 
-    it('includes dialogue id', async () => {
+    it('includes dialogue id', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test-id',
         startNode: 'start',
         nodes: { start: { text: 'Start' } },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       const state = runner.serialize()
       expect(state.dialogueId).toBe('test-id')
     })
 
-    it('includes current node', async () => {
+    it('includes current node', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
         startNode: 'start',
         nodes: { start: { text: 'Start' } },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       const state = runner.serialize()
       expect(state.currentNodeId).toBe('start')
     })
 
-    it('includes history', async () => {
+    it('includes history', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -1352,14 +1352,14 @@ describe('Serialization', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
-      await runner.choose(0)
+      runner.start(dialogue)
+      runner.choose(0)
       const state = runner.serialize()
       expect(state.history).toBeDefined()
       expect(Array.isArray(state.history)).toBe(true)
     })
 
-    it('includes conversation flags', async () => {
+    it('includes conversation flags', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -1371,7 +1371,7 @@ describe('Serialization', () => {
           },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       const state = runner.serialize()
       expect(state.conversationFlags).toBeDefined()
       expect(state.conversationFlags['test']).toBe(true)
@@ -1379,7 +1379,7 @@ describe('Serialization', () => {
   })
 
   describe('runner.deserialize()', () => {
-    it('restores current node', async () => {
+    it('restores current node', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -1389,18 +1389,18 @@ describe('Serialization', () => {
           middle: { text: 'Middle' },
         },
       }
-      await runner.start(dialogue)
-      await runner.jumpTo('middle')
+      runner.start(dialogue)
+      runner.jumpTo('middle')
       const state = runner.serialize()
 
       const runner2 = createDialogueRunner()
       runner2.start(dialogue)
-      await runner2.deserialize(state)
+      runner2.deserialize(state)
       const node = runner2.getCurrentNode()
       expect(node?.text).toBe('Middle')
     })
 
-    it('restores history', async () => {
+    it('restores history', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -1413,18 +1413,18 @@ describe('Serialization', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
-      await runner.choose(0)
+      runner.start(dialogue)
+      runner.choose(0)
       const state = runner.serialize()
 
       const runner2 = createDialogueRunner()
       runner2.start(dialogue)
-      await runner2.deserialize(state)
+      runner2.deserialize(state)
       const history = runner2.getHistory()
       expect(history.length).toBeGreaterThan(0)
     })
 
-    it('restores conversation flags', async () => {
+    it('restores conversation flags', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -1436,17 +1436,17 @@ describe('Serialization', () => {
           },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       const state = runner.serialize()
 
       const runner2 = createDialogueRunner()
       runner2.start(dialogue)
-      await runner2.deserialize(state)
+      runner2.deserialize(state)
       const flags = runner2.getConversationFlags()
       expect(flags['restored']).toBe(true)
     })
 
-    it('fires nodeEnter for restored node', async () => {
+    it('fires nodeEnter for restored node', () => {
       const onNodeEnter = vi.fn()
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
@@ -1457,20 +1457,20 @@ describe('Serialization', () => {
           middle: { text: 'Middle' },
         },
       }
-      await runner.start(dialogue)
-      await runner.jumpTo('middle')
+      runner.start(dialogue)
+      runner.jumpTo('middle')
       const state = runner.serialize()
 
       const runner2 = createDialogueRunner({ onNodeEnter })
       runner2.start(dialogue)
       onNodeEnter.mockClear()
-      await runner2.deserialize(state)
+      runner2.deserialize(state)
       expect(onNodeEnter).toHaveBeenCalled()
     })
   })
 
   describe('Round-Trip', () => {
-    it('serialize then deserialize restores state', async () => {
+    it('serialize then deserialize restores state', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -1486,13 +1486,13 @@ describe('Serialization', () => {
           },
         },
       }
-      await runner.start(dialogue)
-      await runner.choose(0)
+      runner.start(dialogue)
+      runner.choose(0)
       const state = runner.serialize()
 
       const runner2 = createDialogueRunner()
       runner2.start(dialogue)
-      await runner2.deserialize(state)
+      runner2.deserialize(state)
 
       const node = runner2.getCurrentNode()
       const flags = runner2.getConversationFlags()
@@ -1500,7 +1500,7 @@ describe('Serialization', () => {
       expect(flags['test']).toBe(true)
     })
 
-    it('choices work after restore', async () => {
+    it('choices work after restore', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -1517,19 +1517,19 @@ describe('Serialization', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
-      await runner.choose(0)
+      runner.start(dialogue)
+      runner.choose(0)
       const state = runner.serialize()
 
       const runner2 = createDialogueRunner()
       runner2.start(dialogue)
-      await runner2.deserialize(state)
+      runner2.deserialize(state)
       const choices = runner2.getChoices()
       expect(choices.length).toBe(1)
       expect(() => runner2.choose(0)).not.toThrow()
     })
 
-    it('conditions work after restore', async () => {
+    it('conditions work after restore', () => {
       const gameFlags = createMockFlagStore()
       gameFlags.set('test', true)
       const runner = createDialogueRunner({ gameFlags })
@@ -1546,12 +1546,12 @@ describe('Serialization', () => {
           middle: { text: 'Middle' },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       const state = runner.serialize()
 
       const runner2 = createDialogueRunner({ gameFlags })
       runner2.start(dialogue)
-      await runner2.deserialize(state)
+      runner2.deserialize(state)
       const choices = runner2.getChoices()
       expect(choices.length).toBe(1)
     })
@@ -1560,7 +1560,7 @@ describe('Serialization', () => {
 
 describe('i18n Integration', () => {
   describe('I18nAdapter Interface', () => {
-    it('calls t() for text lookup', async () => {
+    it('calls t() for text lookup', () => {
       const i18n = {
         t: vi.fn((key: string) => `translated_${key}`),
         hasKey: () => true,
@@ -1575,11 +1575,11 @@ describe('i18n Integration', () => {
           },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       expect(i18n.t).toHaveBeenCalledWith('greeting.hello', expect.anything())
     })
 
-    it('calls hasKey() to check key existence', async () => {
+    it('calls hasKey() to check key existence', () => {
       const i18n = {
         t: (key: string) => key,
         hasKey: vi.fn(() => false),
@@ -1594,11 +1594,11 @@ describe('i18n Integration', () => {
           },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       expect(i18n.hasKey).toHaveBeenCalled()
     })
 
-    it('passes params to t()', async () => {
+    it('passes params to t()', () => {
       const i18n = {
         t: vi.fn((key: string, params?: any) => `${key}_${params?.name}`),
         hasKey: () => true,
@@ -1615,13 +1615,13 @@ describe('i18n Integration', () => {
           },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       expect(i18n.t).toHaveBeenCalledWith(expect.anything(), expect.anything())
     })
   })
 
   describe('Text Resolution', () => {
-    it('uses i18n when key exists', async () => {
+    it('uses i18n when key exists', () => {
       const i18n = {
         t: (key: string) => 'Translated Text',
         hasKey: (key: string) => key === 'greeting.hello',
@@ -1636,11 +1636,11 @@ describe('i18n Integration', () => {
           },
         },
       }
-      const state = await runner.start(dialogue)
+      const state = runner.start(dialogue)
       expect(state.currentNode.text).toBe('Translated Text')
     })
 
-    it('uses literal text when key does not exist', async () => {
+    it('uses literal text when key does not exist', () => {
       const i18n = {
         t: (key: string) => key,
         hasKey: () => false,
@@ -1655,11 +1655,11 @@ describe('i18n Integration', () => {
           },
         },
       }
-      const state = await runner.start(dialogue)
+      const state = runner.start(dialogue)
       expect(state.currentNode.text).toBe('This is literal text')
     })
 
-    it('works without i18n adapter', async () => {
+    it('works without i18n adapter', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -1670,7 +1670,7 @@ describe('i18n Integration', () => {
           },
         },
       }
-      const state = await runner.start(dialogue)
+      const state = runner.start(dialogue)
       expect(state.currentNode.text).toBe('Plain text')
     })
   })
@@ -1793,7 +1793,7 @@ describe('Validation', () => {
 
 describe('Edge Cases', () => {
   describe('Circular Dialogues', () => {
-    it('handles node pointing to itself', async () => {
+    it('handles node pointing to itself', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -1805,12 +1805,12 @@ describe('Edge Cases', () => {
           },
         },
       }
-      await runner.start(dialogue)
-      await expect(runner.choose(0)).resolves.not.toThrow()
-      await expect(runner.choose(0)).resolves.not.toThrow()
+      runner.start(dialogue)
+      expect(() => runner.choose(0)).not.toThrow()
+      expect(() => runner.choose(0)).not.toThrow()
     })
 
-    it('handles A → B → A cycles', async () => {
+    it('handles A → B → A cycles', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -1826,13 +1826,13 @@ describe('Edge Cases', () => {
           },
         },
       }
-      await runner.start(dialogue)
-      await runner.choose(0)
-      await runner.choose(0)
+      runner.start(dialogue)
+      runner.choose(0)
+      runner.choose(0)
       expect(runner.getCurrentNode()?.text).toBe('A')
     })
 
-    it('history tracks repeated visits', async () => {
+    it('history tracks repeated visits', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -1844,16 +1844,16 @@ describe('Edge Cases', () => {
           },
         },
       }
-      await runner.start(dialogue)
-      await runner.choose(0)
-      await runner.choose(0)
+      runner.start(dialogue)
+      runner.choose(0)
+      runner.choose(0)
       const history = runner.getHistory()
       expect(history.length).toBe(2)
     })
   })
 
   describe('Empty Dialogue', () => {
-    it('handles dialogue with only start node', async () => {
+    it('handles dialogue with only start node', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -1862,10 +1862,10 @@ describe('Edge Cases', () => {
           start: { text: 'Only node' },
         },
       }
-      await expect(runner.start(dialogue)).resolves.not.toThrow()
+      expect(() => runner.start(dialogue)).not.toThrow()
     })
 
-    it('ends immediately if start has no choices', async () => {
+    it('ends immediately if start has no choices', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -1874,13 +1874,13 @@ describe('Edge Cases', () => {
           start: { text: 'End immediately' },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       expect(runner.isEnded()).toBe(true)
     })
   })
 
   describe('Large Dialogues', () => {
-    it('handles 1000 nodes', async () => {
+    it('handles 1000 nodes', () => {
       const nodes: Record<string, any> = {}
       for (let i = 0; i < 1000; i++) {
         nodes[`node${i}`] = {
@@ -1894,10 +1894,10 @@ describe('Edge Cases', () => {
         nodes,
       }
       const runner = createDialogueRunner()
-      await expect(runner.start(dialogue)).resolves.not.toThrow()
+      expect(() => runner.start(dialogue)).not.toThrow()
     })
 
-    it('handles deep nesting', async () => {
+    it('handles deep nesting', () => {
       const dialogue: DialogueDefinition = {
         id: 'test',
         startNode: 'start',
@@ -1933,10 +1933,10 @@ describe('Edge Cases', () => {
         },
       }
       const runner = createDialogueRunner()
-      await expect(runner.start(dialogue)).resolves.not.toThrow()
+      expect(() => runner.start(dialogue)).not.toThrow()
     })
 
-    it('history does not explode memory', async () => {
+    it('history does not explode memory', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -1948,9 +1948,9 @@ describe('Edge Cases', () => {
           },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       for (let i = 0; i < 100; i++) {
-        await runner.choose(0)
+        runner.choose(0)
       }
       const history = runner.getHistory()
       expect(history.length).toBeLessThan(200) // Some reasonable limit
@@ -1958,7 +1958,7 @@ describe('Edge Cases', () => {
   })
 
   describe('Unicode', () => {
-    it('handles unicode in text', async () => {
+    it('handles unicode in text', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -1969,11 +1969,11 @@ describe('Edge Cases', () => {
           },
         },
       }
-      const state = await runner.start(dialogue)
+      const state = runner.start(dialogue)
       expect(state.currentNode.text).toBe('こんにちは世界 🌍')
     })
 
-    it('handles unicode in flag names', async () => {
+    it('handles unicode in flag names', () => {
       const gameFlags = createMockFlagStore()
       const runner = createDialogueRunner({ gameFlags })
       const dialogue: DialogueDefinition = {
@@ -1986,10 +1986,10 @@ describe('Edge Cases', () => {
           },
         },
       }
-      await expect(runner.start(dialogue)).resolves.not.toThrow()
+      expect(() => runner.start(dialogue)).not.toThrow()
     })
 
-    it('handles emoji in choices', async () => {
+    it('handles emoji in choices', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -2002,7 +2002,7 @@ describe('Edge Cases', () => {
           end: { text: 'End' },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       const choices = runner.getChoices()
       expect(choices[0]?.text).toBe('👍 Yes')
     })
@@ -2011,7 +2011,7 @@ describe('Edge Cases', () => {
 
 describe('Auto-Advance', () => {
   describe('Node with next Property', () => {
-    it('auto-advances when node has next but no choices', async () => {
+    it('auto-advances when node has next but no choices', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -2026,11 +2026,11 @@ describe('Auto-Advance', () => {
           },
         },
       }
-      const state = await runner.start(dialogue)
+      const state = runner.start(dialogue)
       expect(state.currentNode.text).toBe('Middle')
     })
 
-    it('fires nodeExit and nodeEnter', async () => {
+    it('fires nodeExit and nodeEnter', () => {
       const onNodeExit = vi.fn()
       const onNodeEnter = vi.fn()
       const runner = createDialogueRunner({ onNodeExit, onNodeEnter })
@@ -2047,12 +2047,12 @@ describe('Auto-Advance', () => {
           },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       expect(onNodeExit).toHaveBeenCalled()
       expect(onNodeEnter).toHaveBeenCalledTimes(2)
     })
 
-    it('executes actions before advancing', async () => {
+    it('executes actions before advancing', () => {
       const gameFlags = createMockFlagStore()
       const runner = createDialogueRunner({ gameFlags })
       const dialogue: DialogueDefinition = {
@@ -2069,7 +2069,7 @@ describe('Auto-Advance', () => {
           },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       expect(gameFlags.get('started')).toBe(true)
     })
   })
@@ -2077,7 +2077,7 @@ describe('Auto-Advance', () => {
 
 describe('Conversation Flag Utilities', () => {
   describe('runner.getConversationFlags()', () => {
-    it('returns current conversation flags', async () => {
+    it('returns current conversation flags', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -2089,7 +2089,7 @@ describe('Conversation Flag Utilities', () => {
           },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       const flags = runner.getConversationFlags()
       expect(flags['test']).toBe('value')
     })
@@ -2102,7 +2102,7 @@ describe('Conversation Flag Utilities', () => {
   })
 
   describe('runner.clearConversationFlags()', () => {
-    it('clears all conversation flags', async () => {
+    it('clears all conversation flags', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -2117,13 +2117,13 @@ describe('Conversation Flag Utilities', () => {
           },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       runner.clearConversationFlags()
       const flags = runner.getConversationFlags()
       expect(Object.keys(flags).length).toBe(0)
     })
 
-    it('does not affect game flags', async () => {
+    it('does not affect game flags', () => {
       const gameFlags = createMockFlagStore()
       gameFlags.set('persistent', true)
       const runner = createDialogueRunner({ gameFlags })
@@ -2137,7 +2137,7 @@ describe('Conversation Flag Utilities', () => {
           },
         },
       }
-      await runner.start(dialogue)
+      runner.start(dialogue)
       runner.clearConversationFlags()
       expect(gameFlags.get('persistent')).toBe(true)
     })

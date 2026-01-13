@@ -418,7 +418,7 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
       const node = currentDialogue.nodes[currentNodeId]
       if (!node || !node.choices) return []
 
-      const { includeUnavailable = false, filter } = options
+      const { includeUnavailable = false, includeDisabled = false, filter } = options
 
       let choices = node.choices
 
@@ -454,7 +454,7 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
 
       // Filter by conditions and disabled state
       return choices.filter(choice => {
-        if (choice.disabled) return false // Exclude disabled choices by default
+        if (choice.disabled) return includeDisabled // Include disabled choices if explicitly requested
 
         if (!choice.conditions) return true
 
