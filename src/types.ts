@@ -199,14 +199,14 @@ export interface ValidationResult {
  * Dialogue runner interface
  */
 export interface DialogueRunner {
-  start(dialogue: DialogueDefinition): DialogueState
+  start(dialogue: DialogueDefinition): DialogueState | Promise<DialogueState>
   getChoices(options?: GetChoicesOptions): ChoiceDefinition[] | ChoiceWithAvailability[]
-  choose(index: number): DialogueState
+  choose(index: number): DialogueState | Promise<DialogueState>
   isEnded(): boolean
   getCurrentNode(): NodeDefinition | null
   getHistory(): HistoryEntry[]
   back(): void
-  restart(options?: RestartOptions): DialogueState
+  restart(options?: RestartOptions): DialogueState | Promise<DialogueState>
   jumpTo(nodeId: string): void
   serialize(): SerializedState
   deserialize(state: SerializedState): void
