@@ -28,7 +28,7 @@ function createMockFlagStore(): FlagStore {
     },
     decrement: (key: string, amount = 1) => {
       const current = (flags.get(key) as number) || 0
-      const newValue = Math.max(0, current - amount)
+      const newValue = current - amount
       flags.set(key, newValue)
       return newValue
     },
@@ -56,6 +56,42 @@ describe('Actions', () => {
       }
       runner.start(dialogue)
       expect(gameFlags.get('testFlag')).toBe(true)
+    })
+
+    it('overwrites existing value', () => {
+      const gameFlags = createMockFlagStore()
+      gameFlags.set('flag', 'old')
+      const runner = createDialogueRunner({ gameFlags })
+      const dialogue: DialogueDefinition = {
+        id: 'test',
+        startNode: 'start',
+        nodes: {
+          start: {
+            text: 'Start',
+            actions: [{ type: 'set', flag: 'flag', value: 'new' }],
+          },
+        },
+      }
+      runner.start(dialogue)
+      expect(gameFlags.get('flag')).toBe('new')
+    })
+
+    it('creates new flag if not exists', () => {
+      const gameFlags = createMockFlagStore()
+      const runner = createDialogueRunner({ gameFlags })
+      const dialogue: DialogueDefinition = {
+        id: 'test',
+        startNode: 'start',
+        nodes: {
+          start: {
+            text: 'Start',
+            actions: [{ type: 'set', flag: 'newFlag', value: 100 }],
+          },
+        },
+      }
+      runner.start(dialogue)
+      expect(gameFlags.has('newFlag')).toBe(true)
+      expect(gameFlags.get('newFlag')).toBe(100)
     })
 
     it('sets conversation flag value', () => {
@@ -113,7 +149,7 @@ describe('Actions', () => {
       expect(gameFlags.has('testFlag')).toBe(false)
     })
 
-    it('clears conversation flag', () => {
+    it('clears conversation flag', async () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -128,9 +164,25 @@ describe('Actions', () => {
           },
         },
       }
-      runner.start(dialogue)
+      await runner.start(dialogue)
       const flags = runner.getConversationFlags()
       expect(flags['temp']).toBeUndefined()
+    })
+
+    it('no error if flag doesn\'t exist', () => {
+      const gameFlags = createMockFlagStore()
+      const runner = createDialogueRunner({ gameFlags })
+      const dialogue: DialogueDefinition = {
+        id: 'test',
+        startNode: 'start',
+        nodes: {
+          start: {
+            text: 'Start',
+            actions: [{ type: 'clear', flag: 'nonexistent' }],
+          },
+        },
+      }
+      expect(() => runner.start(dialogue)).not.toThrow()
     })
   })
 
@@ -187,6 +239,26 @@ describe('Actions', () => {
       runner.start(dialogue)
       expect(gameFlags.get('newCounter')).toBe(10)
     })
+
+    it('works with conversation flags', () => {
+      const runner = createDialogueRunner()
+      const dialogue: DialogueDefinition = {
+        id: 'test',
+        startNode: 'start',
+        nodes: {
+          start: {
+            text: 'Start',
+            actions: [
+              { type: 'set', flag: 'conv:score', value: 5 },
+              { type: 'increment', flag: 'conv:score', value: 3 },
+            ],
+          },
+        },
+      }
+      runner.start(dialogue)
+      const flags = runner.getConversationFlags()
+      expect(flags['score']).toBe(8)
+    })
   })
 
   describe('Decrement Action', () => {
@@ -226,7 +298,7 @@ describe('Actions', () => {
       expect(gameFlags.get('health')).toBe(75)
     })
 
-    it('does not go below 0 for numbers', () => {
+    it('allows negative results', () => {
       const gameFlags = createMockFlagStore()
       gameFlags.set('health', 10)
       const runner = createDialogueRunner({ gameFlags })
@@ -242,7 +314,27 @@ describe('Actions', () => {
       }
       runner.start(dialogue)
       const health = gameFlags.get('health')
-      expect(health).toBeGreaterThanOrEqual(0)
+      expect(health).toBe(-10)
+    })
+
+    it('works with conversation flags', () => {
+      const runner = createDialogueRunner()
+      const dialogue: DialogueDefinition = {
+        id: 'test',
+        startNode: 'start',
+        nodes: {
+          start: {
+            text: 'Start',
+            actions: [
+              { type: 'set', flag: 'conv:counter', value: 10 },
+              { type: 'decrement', flag: 'conv:counter', value: 3 },
+            ],
+          },
+        },
+      }
+      runner.start(dialogue)
+      const flags = runner.getConversationFlags()
+      expect(flags['counter']).toBe(7)
     })
   })
 
@@ -301,7 +393,7 @@ describe('Actions', () => {
       expect(handler).toHaveBeenCalled()
     })
 
-    it('throws if handler not registered', () => {
+    it('throws if handler not registered', async () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -313,10 +405,10 @@ describe('Actions', () => {
           },
         },
       }
-      expect(() => runner.start(dialogue)).toThrow()
+      await expect(runner.start(dialogue)).rejects.toThrow()
     })
 
-    it('fires actionExecuted event with result', () => {
+    it('fires actionExecuted event with result', async () => {
       const onActionExecuted = vi.fn()
       const handler = () => 'result'
       const runner = createDialogueRunner({
@@ -333,7 +425,7 @@ describe('Actions', () => {
           },
         },
       }
-      runner.start(dialogue)
+      await runner.start(dialogue)
       expect(onActionExecuted).toHaveBeenCalled()
       const lastCall = onActionExecuted.mock.calls[onActionExecuted.mock.calls.length - 1]
       expect(lastCall?.[1]).toBe('result')

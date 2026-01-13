@@ -6,7 +6,7 @@ import { ValidationError } from './errors'
 // Mock flag store for testing
 function createMockFlagStore(): FlagStore {
   const flags = new Map<string, boolean | number | string>()
-  return {
+  const store: FlagStore = {
     get: (key: string) => flags.get(key),
     set: (key: string, value: boolean | number | string) => {
       flags.set(key, value)
@@ -39,41 +39,7 @@ function createMockFlagStore(): FlagStore {
     },
     all: () => Object.fromEntries(flags),
     keys: () => Array.from(flags.keys()),
-  } as FlagStore
-  const store = {
-    get: (key: string) => flags.get(key),
-    set: (key: string, value: boolean | number | string) => {
-      flags.set(key, value)
-      return store
-    },
-    has: (key: string) => flags.has(key),
-    delete: (key: string) => {
-      flags.delete(key)
-      return store
-    },
-    clear: () => {
-      flags.clear()
-      return store
-    },
-    increment: (key: string, amount = 1) => {
-      const current = (flags.get(key) as number) || 0
-      const newValue = current + amount
-      flags.set(key, newValue)
-      return newValue
-    },
-    decrement: (key: string, amount = 1) => {
-      const current = (flags.get(key) as number) || 0
-      const newValue = current - amount
-      flags.set(key, newValue)
-      return newValue
-    },
-    check: (condition: string) => {
-      // Simple mock implementation
-      return true
-    },
-    all: () => Object.fromEntries(flags),
-    keys: () => Array.from(flags.keys()),
-  } as FlagStore
+  }
   return store
 }
 
@@ -167,99 +133,108 @@ describe('createDialogueRunner()', () => {
   })
 
   describe('Validation', () => {
-    it('throws ValidationError if gameFlags is not a flag store', () => {
-      expect(() => createDialogueRunner({ gameFlags: {} as FlagStore })).toThrow(ValidationError)
+    it('throws ValidationError if actionHandler is not a function', () => {
+      expect(() =>
+        createDialogueRunner({ actionHandlers: { bad: 'not a function' as any } })
+      ).toThrow(ValidationError)
     })
 
-    it('accepts gameFlags as optional', () => {
-      const runner = createDialogueRunner()
-      expect(runner).toBeDefined()
+    it('throws ValidationError if i18n adapter missing t method', () => {
+      expect(() =>
+        createDialogueRunner({ i18n: { hasKey: () => false } as any })
+      ).toThrow(ValidationError)
+    })
+
+    it('throws ValidationError if i18n adapter missing hasKey method', () => {
+      expect(() =>
+        createDialogueRunner({ i18n: { t: (key: string) => key } as any })
+      ).toThrow(ValidationError)
     })
   })
 })
 
 describe('runner.start()', () => {
   describe('Basic Start', () => {
-    it('starts dialogue at startNode', () => {
+    it('starts dialogue at startNode', async () => {
       const runner = createDialogueRunner()
       const dialogue = createTestDialogue()
-      const state = runner.start(dialogue)
+      const state = await runner.start(dialogue)
       expect(state.currentNode.text).toBe('Welcome!')
     })
 
-    it('returns current node state', () => {
+    it('returns current node state', async () => {
       const runner = createDialogueRunner()
       const dialogue = createTestDialogue()
-      const state = runner.start(dialogue)
+      const state = await runner.start(dialogue)
       expect(state.currentNode).toBeDefined()
       expect(state.availableChoices).toBeDefined()
       expect(state.isEnded).toBeDefined()
     })
 
-    it('sets isEnded to false', () => {
+    it('sets isEnded to false', async () => {
       const runner = createDialogueRunner()
       const dialogue = createTestDialogue()
-      const state = runner.start(dialogue)
+      const state = await runner.start(dialogue)
       expect(state.isEnded).toBe(false)
     })
 
-    it('clears conversation flags from previous dialogue', () => {
+    it('clears conversation flags from previous dialogue', async () => {
       const runner = createDialogueRunner()
       const dialogue = createTestDialogue()
-      runner.start(dialogue)
+      await runner.start(dialogue)
       // Set a conversation flag somehow
       const flags1 = runner.getConversationFlags()
-      runner.start(dialogue) // Start again
+      await runner.start(dialogue) // Start again
       const flags2 = runner.getConversationFlags()
       expect(Object.keys(flags2).length).toBe(0)
     })
 
-    it('fires dialogueStart event', () => {
+    it('fires dialogueStart event', async () => {
       const onDialogueStart = vi.fn()
       const runner = createDialogueRunner({ onDialogueStart })
       const dialogue = createTestDialogue()
-      runner.start(dialogue)
+      await runner.start(dialogue)
       expect(onDialogueStart).toHaveBeenCalledWith(dialogue)
     })
   })
 
   describe('State', () => {
-    it('tracks current node id', () => {
+    it('tracks current node id', async () => {
       const runner = createDialogueRunner()
       const dialogue = createTestDialogue()
-      runner.start(dialogue)
+      await runner.start(dialogue)
       const node = runner.getCurrentNode()
       expect(node).toBeDefined()
       expect(node?.text).toBe('Welcome!')
     })
 
-    it('initializes empty history', () => {
+    it('initializes empty history', async () => {
       const runner = createDialogueRunner()
       const dialogue = createTestDialogue()
-      runner.start(dialogue)
+      await runner.start(dialogue)
       const history = runner.getHistory()
       expect(history.length).toBe(0)
     })
 
-    it('initializes fresh conversation flag store', () => {
+    it('initializes fresh conversation flag store', async () => {
       const runner = createDialogueRunner()
       const dialogue = createTestDialogue()
-      runner.start(dialogue)
+      await runner.start(dialogue)
       const flags = runner.getConversationFlags()
       expect(flags).toEqual({})
     })
   })
 
   describe('Node Entry', () => {
-    it('fires nodeEnter event on start', () => {
+    it('fires nodeEnter event on start', async () => {
       const onNodeEnter = vi.fn()
       const runner = createDialogueRunner({ onNodeEnter })
       const dialogue = createTestDialogue()
-      runner.start(dialogue)
+      await runner.start(dialogue)
       expect(onNodeEnter).toHaveBeenCalled()
     })
 
-    it('executes node actions on entry', () => {
+    it('executes node actions on entry', async () => {
       const gameFlags = createMockFlagStore()
       const runner = createDialogueRunner({ gameFlags })
       const dialogue: DialogueDefinition = {
@@ -272,11 +247,11 @@ describe('runner.start()', () => {
           },
         },
       }
-      runner.start(dialogue)
+      await runner.start(dialogue)
       expect(gameFlags.get('visited')).toBe(true)
     })
 
-    it('interpolates text variables', () => {
+    it('interpolates text variables', async () => {
       const gameFlags = createMockFlagStore()
       gameFlags.set('playerName', 'Hero')
       const runner = createDialogueRunner({ gameFlags })
@@ -289,7 +264,7 @@ describe('runner.start()', () => {
           },
         },
       }
-      const state = runner.start(dialogue)
+      const state = await runner.start(dialogue)
       expect(state.currentNode.text).toBe('Hello Hero!')
     })
   })
@@ -470,7 +445,7 @@ describe('runner.getChoices()', () => {
   })
 
   describe('Disabled Choices', () => {
-    it('includes disabled choices by default', () => {
+    it('disabled: true choices excluded by default', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -488,10 +463,32 @@ describe('runner.getChoices()', () => {
       }
       runner.start(dialogue)
       const choices = runner.getChoices()
+      expect(choices.length).toBe(1)
+      expect(choices[0]?.text).toBe('Enabled')
+    })
+
+    it('includeDisabled: true shows disabled choices', () => {
+      const runner = createDialogueRunner()
+      const dialogue: DialogueDefinition = {
+        id: 'test',
+        startNode: 'start',
+        nodes: {
+          start: {
+            text: 'Start',
+            choices: [
+              { text: 'Disabled', next: 'end', disabled: true },
+              { text: 'Enabled', next: 'end' },
+            ],
+          },
+          end: { text: 'End' },
+        },
+      }
+      runner.start(dialogue)
+      const choices = runner.getChoices({ includeDisabled: true })
       expect(choices.length).toBe(2)
     })
 
-    it('disabled choices have disabled: true', () => {
+    it('disabled choices have disabled: true flag', () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -505,7 +502,7 @@ describe('runner.getChoices()', () => {
         },
       }
       runner.start(dialogue)
-      const choices = runner.getChoices()
+      const choices = runner.getChoices({ includeDisabled: true })
       expect(choices[0]).toHaveProperty('disabled', true)
     })
 
@@ -523,63 +520,84 @@ describe('runner.getChoices()', () => {
         },
       }
       runner.start(dialogue)
-      const choices = runner.getChoices()
+      const choices = runner.getChoices({ includeDisabled: true })
       expect(choices[0]).toHaveProperty('disabledText', 'Not yet')
+    })
+
+    it('handles node with only disabled choices', () => {
+      const runner = createDialogueRunner()
+      const dialogue: DialogueDefinition = {
+        id: 'test',
+        startNode: 'start',
+        nodes: {
+          start: {
+            text: 'Start',
+            choices: [
+              { text: 'Disabled 1', next: 'end', disabled: true },
+              { text: 'Disabled 2', next: 'end', disabled: true },
+            ],
+          },
+          end: { text: 'End' },
+        },
+      }
+      runner.start(dialogue)
+      const choices = runner.getChoices()
+      expect(choices.length).toBe(0)
     })
   })
 })
 
 describe('runner.choose()', () => {
   describe('Basic Selection', () => {
-    it('advances to next node by choice index', () => {
+    it('advances to next node by choice index', async () => {
       const runner = createDialogueRunner()
       const dialogue = createTestDialogue()
-      runner.start(dialogue)
-      const state = runner.choose(0)
+      await runner.start(dialogue)
+      const state = await runner.choose(0)
       expect(state.currentNode.text).toBe('Middle node')
     })
 
-    it('returns new node state', () => {
+    it('returns new node state', async () => {
       const runner = createDialogueRunner()
       const dialogue = createTestDialogue()
-      runner.start(dialogue)
-      const state = runner.choose(0)
+      await runner.start(dialogue)
+      const state = await runner.choose(0)
       expect(state.currentNode).toBeDefined()
       expect(state.availableChoices).toBeDefined()
       expect(state.isEnded).toBeDefined()
     })
 
-    it('fires choiceSelected event', () => {
+    it('fires choiceSelected event', async () => {
       const onChoiceSelected = vi.fn()
       const runner = createDialogueRunner({ onChoiceSelected })
       const dialogue = createTestDialogue()
-      runner.start(dialogue)
-      runner.choose(0)
+      await runner.start(dialogue)
+      await runner.choose(0)
       expect(onChoiceSelected).toHaveBeenCalled()
     })
 
-    it('fires nodeExit event for previous node', () => {
+    it('fires nodeExit event for previous node', async () => {
       const onNodeExit = vi.fn()
       const runner = createDialogueRunner({ onNodeExit })
       const dialogue = createTestDialogue()
-      runner.start(dialogue)
-      runner.choose(0)
+      await runner.start(dialogue)
+      await runner.choose(0)
       expect(onNodeExit).toHaveBeenCalled()
     })
 
-    it('fires nodeEnter event for new node', () => {
+    it('fires nodeEnter event for new node', async () => {
       const onNodeEnter = vi.fn()
       const runner = createDialogueRunner({ onNodeEnter })
       const dialogue = createTestDialogue()
-      runner.start(dialogue)
+      await runner.start(dialogue)
       onNodeEnter.mockClear()
-      runner.choose(0)
+      await runner.choose(0)
       expect(onNodeEnter).toHaveBeenCalled()
     })
   })
 
   describe('Actions', () => {
-    it('executes choice actions on selection', () => {
+    it('executes choice actions on selection', async () => {
       const gameFlags = createMockFlagStore()
       const runner = createDialogueRunner({ gameFlags })
       const dialogue: DialogueDefinition = {
@@ -599,12 +617,12 @@ describe('runner.choose()', () => {
           end: { text: 'End' },
         },
       }
-      runner.start(dialogue)
-      runner.choose(0)
+      await runner.start(dialogue)
+      await runner.choose(0)
       expect(gameFlags.get('chosen')).toBe(true)
     })
 
-    it('executes target node actions on entry', () => {
+    it('executes target node actions on entry', async () => {
       const gameFlags = createMockFlagStore()
       const runner = createDialogueRunner({ gameFlags })
       const dialogue: DialogueDefinition = {
@@ -621,12 +639,12 @@ describe('runner.choose()', () => {
           },
         },
       }
-      runner.start(dialogue)
-      runner.choose(0)
+      await runner.start(dialogue)
+      await runner.choose(0)
       expect(gameFlags.get('reached')).toBe(true)
     })
 
-    it('action errors do not break traversal', () => {
+    it('action errors do not break traversal', async () => {
       const actionHandlers = {
         failingAction: () => {
           throw new Error('Action failed')
@@ -650,21 +668,21 @@ describe('runner.choose()', () => {
           end: { text: 'End' },
         },
       }
-      runner.start(dialogue)
-      expect(() => runner.choose(0)).not.toThrow()
+      await runner.start(dialogue)
+      await runner.choose(0)
       expect(runner.getCurrentNode()?.text).toBe('End')
     })
   })
 
   describe('Validation', () => {
-    it('throws ValidationError for invalid index', () => {
+    it('throws ValidationError for invalid index', async () => {
       const runner = createDialogueRunner()
       const dialogue = createTestDialogue()
-      runner.start(dialogue)
-      expect(() => runner.choose(99)).toThrow(ValidationError)
+      await runner.start(dialogue)
+      await expect(runner.choose(99)).rejects.toThrow(ValidationError)
     })
 
-    it('throws ValidationError for unavailable choice', () => {
+    it('throws ValidationError for unavailable choice', async () => {
       const gameFlags = createMockFlagStore()
       gameFlags.set('hasKey', false)
       const runner = createDialogueRunner({ gameFlags })
@@ -683,11 +701,11 @@ describe('runner.choose()', () => {
           end: { text: 'End' },
         },
       }
-      runner.start(dialogue)
-      expect(() => runner.choose(0)).toThrow(ValidationError)
+      await runner.start(dialogue)
+      await expect(runner.choose(0)).rejects.toThrow(ValidationError)
     })
 
-    it('throws ValidationError for disabled choice', () => {
+    it('throws ValidationError for disabled choice', async () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -703,11 +721,11 @@ describe('runner.choose()', () => {
           end: { text: 'End' },
         },
       }
-      runner.start(dialogue)
-      expect(() => runner.choose(0)).toThrow(ValidationError)
+      await runner.start(dialogue)
+      await expect(runner.choose(0)).rejects.toThrow(ValidationError)
     })
 
-    it('throws ValidationError when dialogue ended', () => {
+    it('throws ValidationError when dialogue ended', async () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -719,8 +737,8 @@ describe('runner.choose()', () => {
           },
         },
       }
-      runner.start(dialogue)
-      expect(() => runner.choose(0)).toThrow(ValidationError)
+      await runner.start(dialogue)
+      await expect(runner.choose(0)).rejects.toThrow(ValidationError)
     })
   })
 })
@@ -801,21 +819,26 @@ describe('runner.getCurrentNode()', () => {
     expect(node).toBeNull()
   })
 
-  it('returns last node after end', () => {
+  it('returns null if dialogue ended', () => {
     const runner = createDialogueRunner()
     const dialogue: DialogueDefinition = {
       id: 'test',
       startNode: 'start',
       nodes: {
         start: {
+          text: 'Start',
+          choices: [{ text: 'End', next: 'end' }],
+        },
+        end: {
           text: 'End',
           isEnd: true,
         },
       },
     }
     runner.start(dialogue)
+    runner.choose(0)
     const node = runner.getCurrentNode()
-    expect(node?.text).toBe('End')
+    expect(node).toBeNull()
   })
 
   it('includes interpolated text', () => {

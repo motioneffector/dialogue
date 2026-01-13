@@ -375,6 +375,30 @@ describe('Dual Flag System', () => {
     })
   })
 
+  describe('getConversationFlags()', () => {
+    it('returns copy not reference', () => {
+      const runner = createDialogueRunner()
+      const dialogue: DialogueDefinition = {
+        id: 'test',
+        startNode: 'start',
+        nodes: {
+          start: {
+            text: 'Start',
+            actions: [{ type: 'set', flag: 'conv:flag1', value: true }],
+          },
+        },
+      }
+      runner.start(dialogue)
+      const flags1 = runner.getConversationFlags()
+      const flags2 = runner.getConversationFlags()
+      expect(flags1).not.toBe(flags2) // Different object references
+      expect(flags1).toEqual(flags2) // Same values
+      flags1['flag1'] = false // Modifying copy shouldn't affect internal state
+      const flags3 = runner.getConversationFlags()
+      expect(flags3['flag1']).toBe(true) // Original value unchanged
+    })
+  })
+
   describe('Flag Resolution', () => {
     it('"gold" resolves to game:gold', () => {
       const gameFlags = createMockFlagStore()
