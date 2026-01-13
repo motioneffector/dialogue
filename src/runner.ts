@@ -478,13 +478,18 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
         throw new ValidationError('No choices available')
       }
 
-      const availableChoices = runner.getChoices() as ChoiceDefinition[]
-      const choice = availableChoices[index]
+      // Validate index is within ORIGINAL choices list
+      if (index < 0 || index >= node.choices.length) {
+        throw new ValidationError(`Invalid choice index: ${index}`)
+      }
 
+      // Get choice from ORIGINAL list
+      const choice = node.choices[index]
       if (!choice) {
         throw new ValidationError(`Invalid choice index: ${index}`)
       }
 
+      // Validate choice is not disabled
       if (choice.disabled) {
         throw new ValidationError('Cannot select disabled choice')
       }
