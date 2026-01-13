@@ -11,6 +11,7 @@ export function validateDialogue(dialogue: DialogueDefinition): ValidationResult
   const errors: string[] = []
 
   // Check if dialogue has nodes
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime validation for user-provided data
   if (!dialogue.nodes || Object.keys(dialogue.nodes).length === 0) {
     errors.push('Dialogue must have at least one node')
     return { valid: false, errors }

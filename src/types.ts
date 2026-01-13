@@ -99,6 +99,7 @@ export interface FlagStore {
 /**
  * Action handler function signature
  */
+// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents -- Both sync and async returns are intentional
 export type ActionHandler = (args?: unknown[]) => unknown | Promise<unknown>
 
 /**
@@ -169,6 +170,7 @@ export interface HistoryEntry {
   choiceIndex?: number
   choice?: ChoiceDefinition
   timestamp: number
+  conversationFlags: Record<string, FlagValue>
 }
 
 /**

@@ -1,0 +1,2178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>@motioneffector/dialogue - Demo</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; background: #f8f9fa; }
+    h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
+    h2 { color: #34495e; margin-top: 30px; }
+    section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .test-pass { color: #27ae60; }
+    .test-fail { color: #e74c3c; font-weight: bold; }
+    .test-output { background: #f5f5f5; padding: 15px; font-family: 'Courier New', monospace; white-space: pre-wrap; max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
+    button { padding: 10px 18px; margin: 4px; cursor: pointer; border: none; border-radius: 4px; font-size: 14px; transition: all 0.2s; }
+    button:hover { transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+    .run-all { background: #27ae60; color: white; font-size: 16px; padding: 12px 24px; font-weight: bold; }
+    .run-all:hover { background: #229954; }
+    .clear-btn { background: #95a5a6; color: white; }
+    .clear-btn:hover { background: #7f8c8d; }
+    .summary { font-size: 18px; font-weight: bold; margin-top: 10px; padding: 10px; border-radius: 4px; }
+    .interactive-section { background: #ecf0f1; padding: 15px; margin: 10px 0; border-radius: 4px; }
+    .dialogue-display { background: white; padding: 15px; margin: 10px 0; border-left: 4px solid #3498db; min-height: 60px; }
+    .speaker { font-weight: bold; color: #2c3e50; margin-bottom: 5px; }
+    .text { color: #34495e; line-height: 1.6; }
+    .choices { margin-top: 15px; }
+    .choice-btn { background: #3498db; color: white; display: block; width: 100%; text-align: left; margin: 5px 0; padding: 12px; }
+    .choice-btn:hover { background: #2980b9; }
+    .choice-btn:disabled { background: #bdc3c7; cursor: not-allowed; }
+    .flag-display { background: #fff3cd; padding: 10px; margin: 10px 0; border-radius: 4px; font-family: monospace; font-size: 13px; }
+    input[type="text"], select { padding: 8px; margin: 5px; border: 1px solid #ddd; border-radius: 4px; }
+    .info { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 10px; margin: 10px 0; color: #0c5460; }
+    .progress { color: #7f8c8d; font-style: italic; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>@motioneffector/dialogue Demo</h1>
+  <p class="info">
+    This demo showcases the branching dialogue runner library. It includes automated tests and interactive examples.
+  </p>
+
+  <section id="test-runner">
+    <h2>Automated Tests</h2>
+    <button class="run-all" onclick="runAllTests()">▶ Run All Tests</button>
+    <button class="clear-btn" onclick="clearResults()">Clear Results</button>
+    <div class="summary" id="summary"></div>
+    <div class="progress" id="progress"></div>
+    <div class="test-output" id="test-output"></div>
+  </section>
+
+  <section>
+    <h2>Interactive: Simple Dialogue</h2>
+    <p>A basic dialogue demonstrating node traversal and choices.</p>
+    <div class="interactive-section">
+      <button onclick="startSimpleDialogue()">Start Dialogue</button>
+      <button onclick="restartCurrentDialogue()">Restart</button>
+      <button onclick="goBack()">◀ Back</button>
+      <div class="dialogue-display" id="simple-display">
+        <div class="text">Click "Start Dialogue" to begin.</div>
+      </div>
+      <div class="choices" id="simple-choices"></div>
+      <div class="flag-display" id="simple-flags">Flags: (none)</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Interactive: Flag System Demo</h2>
+    <p>Demonstrates game flags and conversation flags with conditions.</p>
+    <div class="interactive-section">
+      <button onclick="startFlagDialogue()">Start Flag Demo</button>
+      <button onclick="resetFlags()">Reset All Flags</button>
+      <div class="dialogue-display" id="flag-display">
+        <div class="text">Start the dialogue to see flag-based conditions.</div>
+      </div>
+      <div class="choices" id="flag-choices"></div>
+      <div class="flag-display" id="flag-status">
+        <strong>Game Flags:</strong> <span id="game-flags">(none)</span><br>
+        <strong>Conversation Flags:</strong> <span id="conv-flags">(none)</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Interactive: Text Interpolation</h2>
+    <p>Shows dynamic text substitution from flags and custom sources.</p>
+    <div class="interactive-section">
+      <label>Your Name: <input type="text" id="player-name" value="Adventurer"></label>
+      <label>Gold: <input type="number" id="player-gold" value="50" min="0"></label>
+      <button onclick="startInterpolationDialogue()">Start Dialogue</button>
+      <div class="dialogue-display" id="interp-display">
+        <div class="text">Set your name and gold, then start.</div>
+      </div>
+      <div class="choices" id="interp-choices"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Interactive: Serialization</h2>
+    <p>Save and restore dialogue state.</p>
+    <div class="interactive-section">
+      <button onclick="startSerializationDemo()">Start Dialogue</button>
+      <button onclick="saveDialogueState()">💾 Save State</button>
+      <button onclick="loadDialogueState()">📂 Load State</button>
+      <div class="dialogue-display" id="serial-display">
+        <div class="text">Start dialogue and make some choices, then try saving and loading.</div>
+      </div>
+      <div class="choices" id="serial-choices"></div>
+      <div class="flag-display" id="serial-state">Saved State: (none)</div>
+    </div>
+  </section>
+
+  <script>
+    // ============================================
+    // INLINED LIBRARY CODE (from dist/index.js)
+    // ============================================
+    class DialogueError extends Error {
+      constructor(r) {
+        super(r), this.name = "DialogueError", Object.setPrototypeOf(this, new.target.prototype);
+      }
+    }
+    class ValidationError extends DialogueError {
+      constructor(r, o) {
+        super(r), this.field = o, this.name = "ValidationError";
+      }
+    }
+    class DialogueStructureError extends DialogueError {
+      constructor(r, o, i) {
+        super(r), this.dialogueId = o, this.nodeId = i, this.name = "DialogueStructureError";
+      }
+    }
+    function createFlagStore() {
+      const e = new Map(), r = {
+        get: (o) => e.get(o),
+        set: (o, i) => (e.set(o, i), r),
+        has: (o) => e.has(o),
+        delete: (o) => (e.delete(o), r),
+        clear: () => (e.clear(), r),
+        increment: (o, i = 1) => {
+          const u = (e.get(o) || 0) + i;
+          return e.set(o, u), u;
+        },
+        decrement: (o, i = 1) => {
+          const p = e.get(o) || 0, u = Math.max(0, p - i);
+          return e.set(o, u), u;
+        },
+        check: () => true,
+        all: () => Object.fromEntries(e),
+        keys: () => Array.from(e.keys())
+      };
+      return r;
+    }
+    function parseFlagScope(e) {
+      return e.startsWith("conv:") ? { scope: "conv", key: e.slice(5) } : e.startsWith("game:") ? { scope: "game", key: e.slice(5) } : { scope: "game", key: e };
+    }
+    function evaluateCondition(e, r, o) {
+      if ("check" in e) {
+        const [i, p, u] = e.check, { scope: n, key: a } = parseFlagScope(i), h = n === "game" ? r : o, k = n === "conv" ? a : i, v = h.get(k);
+        switch (p) {
+          case "==":
+            return v === u;
+          case "!=":
+            return v !== u;
+          case ">":
+            return v > u;
+          case "<":
+            return v < u;
+          case ">=":
+            return v >= u;
+          case "<=":
+            return v <= u;
+          default:
+            return false;
+        }
+      }
+      return "and" in e ? e.and.every((i) => evaluateCondition(i, r, o)) : "or" in e ? e.or.some((i) => evaluateCondition(i, r, o)) : "not" in e ? !evaluateCondition(e.not, r, o) : false;
+    }
+    async function executeAction(e, r, o, i, p) {
+      let u;
+      try {
+        switch (e.type) {
+          case "set": {
+            const { scope: n, key: a } = parseFlagScope(e.flag), h = n === "game" ? r : o, k = n === "conv" ? a : e.flag;
+            h.set(k, e.value), u = e.value;
+            break;
+          }
+          case "clear": {
+            const { scope: n, key: a } = parseFlagScope(e.flag), h = n === "game" ? r : o, k = n === "conv" ? a : e.flag;
+            h.delete(k), u = true;
+            break;
+          }
+          case "increment": {
+            const { scope: n, key: a } = parseFlagScope(e.flag), h = n === "game" ? r : o, k = n === "conv" ? a : e.flag;
+            u = h.increment(k, e.value);
+            break;
+          }
+          case "decrement": {
+            const { scope: n, key: a } = parseFlagScope(e.flag), h = n === "game" ? r : o, k = n === "conv" ? a : e.flag;
+            u = h.decrement(k, e.value);
+            break;
+          }
+          case "callback": {
+            const n = i[e.name];
+            if (!n)
+              throw new Error(`Action handler not registered: ${e.name}`);
+            u = await n(e.args);
+            break;
+          }
+        }
+        p == null || p(e, u);
+      } catch (n) {
+        if (e.type === "callback" && !i[e.name])
+          throw n;
+        console.error("Action execution error:", n);
+      }
+      return u;
+    }
+    async function interpolateText(e, r, o, i) {
+      let p = e;
+      const u = Array.from(p.matchAll(/\{\{(\w+(?::\w+)?)\}\}/g));
+      for (const n of u) {
+        const a = n[1];
+        if (!a) continue;
+        let h = "";
+        if (o[a]) {
+          const k = await o[a](r);
+          h = String(k || "");
+        } else if (a === "speaker" && i)
+          h = i.name;
+        else {
+          const { scope: k, key: v } = parseFlagScope(a), N = k === "game" ? r.gameFlags : r.conversationFlags, $ = k === "conv" ? v : a, c = N.get($);
+          h = c !== void 0 ? String(c) : "";
+        }
+        p = p.replace(n[0], h);
+      }
+      return p;
+    }
+    function createDialogueRunner(e = {}) {
+      const {
+        gameFlags: r = createFlagStore(),
+        actionHandlers: o = {},
+        speakers: i = {},
+        i18n: p,
+        interpolation: u = {},
+        onNodeEnter: n,
+        onNodeExit: a,
+        onChoiceSelected: h,
+        onDialogueStart: k,
+        onDialogueEnd: v,
+        onActionExecuted: N,
+        onConditionEvaluated: $
+      } = e;
+      if (r && typeof r.get !== "function")
+        throw new ValidationError("gameFlags must be a valid FlagStore", "gameFlags");
+      if (o) {
+        for (const [t, s] of Object.entries(o))
+          if (typeof s !== "function")
+            throw new ValidationError(`actionHandler "${t}" must be a function`, "actionHandlers");
+      }
+      if (p) {
+        if (typeof p.t !== "function")
+          throw new ValidationError('i18n adapter must have a "t" method', "i18n");
+        if (typeof p.hasKey !== "function")
+          throw new ValidationError('i18n adapter must have a "hasKey" method', "i18n");
+      }
+      let c = null, l = null, x = null, y = createFlagStore(), b = [];
+      const O = {};
+      async function T() {
+        if (!c || !l) return null;
+        const t = c.nodes[l];
+        if (!t) return null;
+        const s = t.speaker ? i[t.speaker] : void 0, f = {
+          currentNode: t,
+          ...s ? { speaker: s } : {},
+          gameFlags: r,
+          conversationFlags: y
+        };
+        let d = t.text;
+        return p != null && p.hasKey(d) && (d = p.t(d, {})), d = await interpolateText(d, f, u, s), { ...t, text: d };
+      }
+      async function I() {
+        x = await T();
+      }
+      async function A() {
+        if (!c || !l) return;
+        const t = c.nodes[l];
+        if (t && t.next && (!t.choices || t.choices.length === 0)) {
+          a == null || a(t), b.push({
+            nodeId: l,
+            node: t,
+            timestamp: Date.now(),
+            conversationFlags: { ...y.all() }
+          }), l = t.next;
+          const s = c.nodes[l];
+          if (s) {
+            if (s.actions)
+              for (const d of s.actions)
+                await executeAction(d, r, y, o, N);
+            await I();
+            const f = s.speaker ? i[s.speaker] : void 0;
+            n == null || n(s, f), await A();
+          }
+        }
+      }
+      const C = {
+        start: async (t) => {
+          c = t, l = t.startNode, y = createFlagStore(), b = [], k == null || k(t);
+          const s = c.nodes[l];
+          if (!s)
+            throw new ValidationError(`Start node not found: ${t.startNode}`);
+          if (s.actions)
+            for (const m of s.actions)
+              await executeAction(m, r, y, o, N);
+          await I();
+          const f = s.speaker ? i[s.speaker] : void 0;
+          n == null || n(s, f), await A(), await I();
+          const d = C.isEnded();
+          if (d && l) {
+            const m = c.nodes[l];
+            m && (v == null || v(t.id, m));
+          }
+          if (!x)
+            throw new ValidationError("Failed to initialize dialogue state");
+          return {
+            currentNode: x,
+            availableChoices: C.getChoices(),
+            isEnded: d
+          };
+        },
+        getChoices: (t = {}) => {
+          if (!c || !l) return [];
+          const s = c.nodes[l];
+          if (!(s != null && s.choices)) return [];
+          const { includeUnavailable: f = false, includeDisabled: d = false, filter: m } = t;
+          let K = s.choices;
+          return m && (K = K.filter(m)), f ? K.map((w) => {
+            const S = w.disabled ? false : w.conditions ? evaluateCondition(w.conditions, r, y) : true;
+            w.conditions && $ && $(w.conditions, S);
+            const z = {
+              ...w,
+              available: S
+            };
+            return !S && !w.disabled && w.conditions && (z.reason = "Conditions not met"), z;
+          }) : K.filter((w) => {
+            if (w.disabled) return d;
+            if (!w.conditions) return true;
+            const S = evaluateCondition(w.conditions, r, y);
+            return $ == null || $(w.conditions, S), S;
+          });
+        },
+        choose: async (t) => {
+          if (!c || !l)
+            throw new ValidationError("No active dialogue");
+          if (C.isEnded())
+            throw new ValidationError("Dialogue has ended");
+          const s = c.nodes[l];
+          if (!(s != null && s.choices))
+            throw new ValidationError("No choices available");
+          if (t < 0 || t >= s.choices.length)
+            throw new ValidationError(`Invalid choice index: ${String(t)}`);
+          const f = s.choices[t];
+          if (!f)
+            throw new ValidationError(`Invalid choice index: ${String(t)}`);
+          if (f.disabled)
+            throw new ValidationError("Cannot select disabled choice");
+          if (f.conditions && !evaluateCondition(f.conditions, r, y))
+            throw new ValidationError("Choice conditions not met");
+          if (h == null || h(f, t), a == null || a(s), b.push({
+            nodeId: l,
+            node: s,
+            choiceIndex: t,
+            choice: f,
+            timestamp: Date.now(),
+            conversationFlags: { ...y.all() }
+          }), f.actions)
+            for (const w of f.actions)
+              await executeAction(w, r, y, o, N);
+          l = f.next;
+          const d = c.nodes[l];
+          if (!d)
+            throw new ValidationError(`Target node not found: ${f.next}`);
+          if (d.actions)
+            for (const w of d.actions)
+              await executeAction(w, r, y, o, N);
+          await I();
+          const m = d.speaker ? i[d.speaker] : void 0;
+          n == null || n(d, m), await A(), await I();
+          const K = C.isEnded();
+          if (K && l) {
+            const w = c.nodes[l];
+            w && (v == null || v(c.id, w));
+          }
+          if (!x)
+            throw new ValidationError("Failed to complete choice transition");
+          return {
+            currentNode: x,
+            availableChoices: C.getChoices(),
+            isEnded: K
+          };
+        },
+        isEnded: () => {
+          if (!c || !l) return false;
+          const t = c.nodes[l];
+          return t ? !!(t.isEnd || (!t.choices || t.choices.length === 0) && !t.next) : false;
+        },
+        getCurrentNode: () => x != null && x.isEnd ? null : x,
+        getHistory: () => [...b],
+        back: async () => {
+          if (b.length === 0) return;
+          const t = b.pop();
+          if (!t) return;
+          l = t.nodeId, y.clear();
+          for (const [f, d] of Object.entries(t.conversationFlags))
+            y.set(f, d);
+          await I();
+          const s = c == null ? void 0 : c.nodes[l];
+          if (s) {
+            const f = s.speaker ? i[s.speaker] : void 0;
+            n == null || n(s, f);
+          }
+        },
+        restart: async (t = {}) => {
+          if (!c)
+            throw new ValidationError("No active dialogue");
+          b = [];
+          const s = await C.start(c);
+          return t.preserveConversationFlags || (y.clear(), await I()), s;
+        },
+        jumpTo: async (t) => {
+          if (!c)
+            throw new ValidationError("No active dialogue");
+          const s = c.nodes[t];
+          if (!s)
+            throw new ValidationError(`Node not found: ${t}`);
+          const f = l;
+          if (f) {
+            const m = c.nodes[f];
+            m && (a == null || a(m), b.push({
+              nodeId: f,
+              node: m,
+              timestamp: Date.now(),
+              conversationFlags: { ...y.all() }
+            }));
+          }
+          l = t, await I();
+          const d = s.speaker ? i[s.speaker] : void 0;
+          n == null || n(s, d);
+        },
+        serialize: () => {
+          if (!c || !l)
+            throw new ValidationError("No active dialogue to serialize");
+          return {
+            dialogueId: c.id,
+            currentNodeId: l,
+            history: b,
+            conversationFlags: y.all()
+          };
+        },
+        deserialize: async (t) => {
+          if (!c)
+            throw new ValidationError("Start a dialogue before deserializing state");
+          l = t.currentNodeId, b = t.history, y = createFlagStore();
+          for (const [f, d] of Object.entries(t.conversationFlags))
+            y.set(f, d);
+          await I();
+          const s = c.nodes[l];
+          if (s) {
+            const f = s.speaker ? i[s.speaker] : void 0;
+            n == null || n(s, f);
+          }
+        },
+        getConversationFlags: () => y.all(),
+        clearConversationFlags: () => {
+          y.clear();
+        },
+        on: (t, s) => {
+          O[t] ?? (O[t] = []), O[t].push(s);
+        }
+      };
+      return C;
+    }
+    function validateDialogue(e) {
+      const r = [];
+      if (!e.nodes || Object.keys(e.nodes).length === 0)
+        return r.push("Dialogue must have at least one node"), { valid: false, errors: r };
+      e.nodes[e.startNode] || r.push(`Start node "${e.startNode}" not found in nodes`);
+      const o = new Set(), i = [e.startNode];
+      for (; i.length > 0; ) {
+        const n = i.pop();
+        if (!n || o.has(n)) continue;
+        o.add(n);
+        const a = e.nodes[n];
+        if (a) {
+          if (a.choices)
+            for (const h of a.choices)
+              e.nodes[h.next] ? o.has(h.next) || i.push(h.next) : r.push(`Choice in node "${n}" targets non-existent node "${h.next}"`);
+          a.next && !e.nodes[a.next] ? r.push(`Node "${n}" auto-advances to non-existent node "${a.next}"`) : a.next && !o.has(a.next) && i.push(a.next);
+        }
+      }
+      const u = Object.keys(e.nodes).filter((n) => !o.has(n));
+      return u.length > 0 && r.push(`Unreachable nodes: ${u.join(", ")}`), {
+        valid: r.length === 0,
+        errors: r
+      };
+    }
+    function createI18nAdapter(e) {
+      return {
+        t: (r, o) => e.t(r, o),
+        hasKey: (r) => e.hasKey(r)
+      };
+    }
+
+    // Expose exports to window
+    window.DialogueError = DialogueError;
+    window.ValidationError = ValidationError;
+    window.DialogueStructureError = DialogueStructureError;
+    window.createDialogueRunner = createDialogueRunner;
+    window.createFlagStore = createFlagStore;
+    window.validateDialogue = validateDialogue;
+    window.createI18nAdapter = createI18nAdapter;
+    // ============================================
+  </script>
+
+  <script>
+    // ============================================
+    // DEMO AND TEST CODE
+    // ============================================
+
+    // Global runner instances for interactive demos
+    let simpleRunner = null;
+    let flagRunner = null;
+    let interpRunner = null;
+    let serialRunner = null;
+    let savedState = null;
+
+    // Test data
+    const tests = [
+      // createDialogueRunner tests
+      {
+        name: 'createDialogueRunner: creates runner with minimal options',
+        fn: async () => {
+          const runner = createDialogueRunner({ gameFlags: createFlagStore() });
+          if (!runner || typeof runner.start !== 'function') throw new Error('Runner not created correctly');
+        }
+      },
+      {
+        name: 'createDialogueRunner: creates runner with action handlers',
+        fn: async () => {
+          const runner = createDialogueRunner({
+            gameFlags: createFlagStore(),
+            actionHandlers: { test: () => {} }
+          });
+          if (!runner) throw new Error('Runner not created');
+        }
+      },
+      {
+        name: 'createDialogueRunner: throws ValidationError for invalid actionHandler',
+        fn: async () => {
+          try {
+            createDialogueRunner({
+              gameFlags: createFlagStore(),
+              actionHandlers: { test: 'not a function' }
+            });
+            throw new Error('Should have thrown ValidationError');
+          } catch (e) {
+            if (e.name !== 'ValidationError') throw new Error('Wrong error type: ' + e.name);
+          }
+        }
+      },
+      {
+        name: 'createDialogueRunner: runner has all expected methods',
+        fn: async () => {
+          const runner = createDialogueRunner({ gameFlags: createFlagStore() });
+          const methods = ['start', 'getChoices', 'choose', 'isEnded', 'getCurrentNode', 'getHistory', 'back', 'restart', 'jumpTo', 'serialize', 'deserialize', 'on', 'getConversationFlags', 'clearConversationFlags'];
+          for (const method of methods) {
+            if (typeof runner[method] !== 'function') throw new Error(`Missing method: ${method}`);
+          }
+        }
+      },
+
+      // runner.start tests
+      {
+        name: 'runner.start: starts dialogue at startNode',
+        fn: async () => {
+          const runner = createDialogueRunner({ gameFlags: createFlagStore() });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: { text: 'Hello', isEnd: true }
+            }
+          };
+          const result = await runner.start(dialogue);
+          if (result.currentNode.text !== 'Hello') throw new Error('Wrong start node');
+        }
+      },
+      {
+        name: 'runner.start: returns current node state',
+        fn: async () => {
+          const runner = createDialogueRunner({ gameFlags: createFlagStore() });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: { text: 'Hello', isEnd: true }
+            }
+          };
+          const result = await runner.start(dialogue);
+          if (!result.currentNode || !result.hasOwnProperty('isEnded')) throw new Error('Invalid state');
+        }
+      },
+      {
+        name: 'runner.start: throws ValidationError for missing startNode',
+        fn: async () => {
+          const runner = createDialogueRunner({ gameFlags: createFlagStore() });
+          const dialogue = {
+            id: 'test',
+            startNode: 'missing',
+            nodes: {
+              start: { text: 'Hello', isEnd: true }
+            }
+          };
+          try {
+            await runner.start(dialogue);
+            throw new Error('Should have thrown ValidationError');
+          } catch (e) {
+            if (e.name !== 'ValidationError') throw new Error('Wrong error type: ' + e.name);
+          }
+        }
+      },
+      {
+        name: 'runner.start: executes node entry actions',
+        fn: async () => {
+          const flags = createFlagStore();
+          const runner = createDialogueRunner({ gameFlags: flags });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'Hello',
+                actions: [{ type: 'set', flag: 'visited', value: true }],
+                isEnd: true
+              }
+            }
+          };
+          await runner.start(dialogue);
+          if (flags.get('visited') !== true) throw new Error('Action not executed');
+        }
+      },
+
+      // getCurrentNode tests
+      {
+        name: 'getCurrentNode: returns current node',
+        fn: async () => {
+          const runner = createDialogueRunner({ gameFlags: createFlagStore() });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'Hello',
+                choices: [{ text: 'Next', next: 'end' }]
+              },
+              end: { text: 'End', isEnd: true }
+            }
+          };
+          await runner.start(dialogue);
+          const node = runner.getCurrentNode();
+          if (!node || node.text !== 'Hello') throw new Error('Wrong node returned');
+        }
+      },
+      {
+        name: 'getCurrentNode: returns null if dialogue ended',
+        fn: async () => {
+          const runner = createDialogueRunner({ gameFlags: createFlagStore() });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: { text: 'Hello', isEnd: true }
+            }
+          };
+          await runner.start(dialogue);
+          const node = runner.getCurrentNode();
+          if (node !== null) throw new Error('Should return null for ended dialogue');
+        }
+      },
+
+      // getChoices tests
+      {
+        name: 'getChoices: returns available choices',
+        fn: async () => {
+          const runner = createDialogueRunner({ gameFlags: createFlagStore() });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'Choose',
+                choices: [
+                  { text: 'Option 1', next: 'end' },
+                  { text: 'Option 2', next: 'end' }
+                ]
+              },
+              end: { text: 'Done', isEnd: true }
+            }
+          };
+          await runner.start(dialogue);
+          const choices = runner.getChoices();
+          if (choices.length !== 2) throw new Error(`Expected 2 choices, got ${choices.length}`);
+        }
+      },
+      {
+        name: 'getChoices: filters out choices where conditions fail',
+        fn: async () => {
+          const flags = createFlagStore();
+          flags.set('hasKey', false);
+          const runner = createDialogueRunner({ gameFlags: flags });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'Choose',
+                choices: [
+                  { text: 'Unlock', next: 'end', conditions: { check: ['hasKey', '==', true] } },
+                  { text: 'Leave', next: 'end' }
+                ]
+              },
+              end: { text: 'Done', isEnd: true }
+            }
+          };
+          await runner.start(dialogue);
+          const choices = runner.getChoices();
+          if (choices.length !== 1) throw new Error(`Expected 1 choice, got ${choices.length}`);
+          if (choices[0].text !== 'Leave') throw new Error('Wrong choice available');
+        }
+      },
+      {
+        name: 'getChoices: includeUnavailable returns all choices with available flag',
+        fn: async () => {
+          const flags = createFlagStore();
+          flags.set('hasKey', false);
+          const runner = createDialogueRunner({ gameFlags: flags });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'Choose',
+                choices: [
+                  { text: 'Unlock', next: 'end', conditions: { check: ['hasKey', '==', true] } },
+                  { text: 'Leave', next: 'end' }
+                ]
+              },
+              end: { text: 'Done', isEnd: true }
+            }
+          };
+          await runner.start(dialogue);
+          const choices = runner.getChoices({ includeUnavailable: true });
+          if (choices.length !== 2) throw new Error(`Expected 2 choices, got ${choices.length}`);
+          if (choices[0].available !== false) throw new Error('First choice should be unavailable');
+          if (choices[1].available !== true) throw new Error('Second choice should be available');
+        }
+      },
+      {
+        name: 'getChoices: disabled choices excluded by default',
+        fn: async () => {
+          const runner = createDialogueRunner({ gameFlags: createFlagStore() });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'Choose',
+                choices: [
+                  { text: 'Disabled', next: 'end', disabled: true },
+                  { text: 'Enabled', next: 'end' }
+                ]
+              },
+              end: { text: 'Done', isEnd: true }
+            }
+          };
+          await runner.start(dialogue);
+          const choices = runner.getChoices();
+          if (choices.length !== 1) throw new Error(`Expected 1 choice, got ${choices.length}`);
+        }
+      },
+      {
+        name: 'getChoices: includeDisabled shows disabled choices',
+        fn: async () => {
+          const runner = createDialogueRunner({ gameFlags: createFlagStore() });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'Choose',
+                choices: [
+                  { text: 'Disabled', next: 'end', disabled: true },
+                  { text: 'Enabled', next: 'end' }
+                ]
+              },
+              end: { text: 'Done', isEnd: true }
+            }
+          };
+          await runner.start(dialogue);
+          const choices = runner.getChoices({ includeDisabled: true });
+          if (choices.length !== 2) throw new Error(`Expected 2 choices, got ${choices.length}`);
+        }
+      },
+
+      // choose tests
+      {
+        name: 'choose: advances to next node',
+        fn: async () => {
+          const runner = createDialogueRunner({ gameFlags: createFlagStore() });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'Start',
+                choices: [{ text: 'Next', next: 'second' }]
+              },
+              second: {
+                text: 'Second',
+                choices: [{ text: 'End', next: 'end' }]
+              },
+              end: { text: 'End', isEnd: true }
+            }
+          };
+          await runner.start(dialogue);
+          await runner.choose(0);
+          const node = runner.getCurrentNode();
+          if (!node || node.text !== 'Second') throw new Error('Did not advance to second node');
+        }
+      },
+      {
+        name: 'choose: executes choice actions',
+        fn: async () => {
+          const flags = createFlagStore();
+          const runner = createDialogueRunner({ gameFlags: flags });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'Start',
+                choices: [{
+                  text: 'Set flag',
+                  next: 'end',
+                  actions: [{ type: 'set', flag: 'chosen', value: true }]
+                }]
+              },
+              end: { text: 'End', isEnd: true }
+            }
+          };
+          await runner.start(dialogue);
+          await runner.choose(0);
+          if (flags.get('chosen') !== true) throw new Error('Choice action not executed');
+        }
+      },
+      {
+        name: 'choose: throws ValidationError for invalid index',
+        fn: async () => {
+          const runner = createDialogueRunner({ gameFlags: createFlagStore() });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'Start',
+                choices: [{ text: 'Only', next: 'end' }]
+              },
+              end: { text: 'End', isEnd: true }
+            }
+          };
+          await runner.start(dialogue);
+          try {
+            await runner.choose(5);
+            throw new Error('Should have thrown ValidationError');
+          } catch (e) {
+            if (e.name !== 'ValidationError') throw new Error('Wrong error type: ' + e.name);
+          }
+        }
+      },
+      {
+        name: 'choose: throws ValidationError for disabled choice',
+        fn: async () => {
+          const runner = createDialogueRunner({ gameFlags: createFlagStore() });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'Start',
+                choices: [{ text: 'Disabled', next: 'end', disabled: true }]
+              },
+              end: { text: 'End', isEnd: true }
+            }
+          };
+          await runner.start(dialogue);
+          try {
+            await runner.choose(0);
+            throw new Error('Should have thrown ValidationError');
+          } catch (e) {
+            if (e.name !== 'ValidationError') throw new Error('Wrong error type: ' + e.name);
+          }
+        }
+      },
+
+      // isEnded tests
+      {
+        name: 'isEnded: returns false when dialogue active',
+        fn: async () => {
+          const runner = createDialogueRunner({ gameFlags: createFlagStore() });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'Start',
+                choices: [{ text: 'Next', next: 'end' }]
+              },
+              end: { text: 'End', isEnd: true }
+            }
+          };
+          await runner.start(dialogue);
+          if (runner.isEnded()) throw new Error('Dialogue should not be ended');
+        }
+      },
+      {
+        name: 'isEnded: returns true after reaching terminal node',
+        fn: async () => {
+          const runner = createDialogueRunner({ gameFlags: createFlagStore() });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: { text: 'End', isEnd: true }
+            }
+          };
+          await runner.start(dialogue);
+          if (!runner.isEnded()) throw new Error('Dialogue should be ended');
+        }
+      },
+
+      // Dual flag system tests
+      {
+        name: 'Flags: game flags persist across dialogues',
+        fn: async () => {
+          const flags = createFlagStore();
+          flags.set('gold', 100);
+          const runner = createDialogueRunner({ gameFlags: flags });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: { text: 'Start', isEnd: true }
+            }
+          };
+          await runner.start(dialogue);
+          if (flags.get('gold') !== 100) throw new Error('Game flags not persisted');
+        }
+      },
+      {
+        name: 'Flags: conversation flags cleared on dialogue end',
+        fn: async () => {
+          const runner = createDialogueRunner({ gameFlags: createFlagStore() });
+          const dialogue1 = {
+            id: 'test1',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'Start',
+                actions: [{ type: 'set', flag: 'conv:temp', value: true }],
+                isEnd: true
+              }
+            }
+          };
+          const dialogue2 = {
+            id: 'test2',
+            startNode: 'start',
+            nodes: {
+              start: { text: 'Start', isEnd: true }
+            }
+          };
+          await runner.start(dialogue1);
+          if (!runner.getConversationFlags().temp) throw new Error('Conv flag not set');
+          await runner.start(dialogue2);
+          if (runner.getConversationFlags().temp) throw new Error('Conv flags not cleared');
+        }
+      },
+      {
+        name: 'Flags: unprefixed flags default to game scope',
+        fn: async () => {
+          const flags = createFlagStore();
+          const runner = createDialogueRunner({ gameFlags: flags });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'Start',
+                actions: [{ type: 'set', flag: 'test', value: 42 }],
+                isEnd: true
+              }
+            }
+          };
+          await runner.start(dialogue);
+          if (flags.get('test') !== 42) throw new Error('Unprefixed flag not in game scope');
+        }
+      },
+      {
+        name: 'Flags: conv: prefix targets conversation flags',
+        fn: async () => {
+          const flags = createFlagStore();
+          const runner = createDialogueRunner({ gameFlags: flags });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'Start',
+                actions: [{ type: 'set', flag: 'conv:local', value: 'yes' }],
+                isEnd: true
+              }
+            }
+          };
+          await runner.start(dialogue);
+          if (runner.getConversationFlags().local !== 'yes') throw new Error('Conv flag not set');
+          if (flags.get('local') !== undefined) throw new Error('Conv flag leaked to game flags');
+        }
+      },
+
+      // Actions tests
+      {
+        name: 'Actions: set action creates new flag',
+        fn: async () => {
+          const flags = createFlagStore();
+          const runner = createDialogueRunner({ gameFlags: flags });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'Start',
+                actions: [{ type: 'set', flag: 'new', value: 123 }],
+                isEnd: true
+              }
+            }
+          };
+          await runner.start(dialogue);
+          if (flags.get('new') !== 123) throw new Error('Set action failed');
+        }
+      },
+      {
+        name: 'Actions: increment action',
+        fn: async () => {
+          const flags = createFlagStore();
+          flags.set('count', 5);
+          const runner = createDialogueRunner({ gameFlags: flags });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'Start',
+                actions: [{ type: 'increment', flag: 'count', value: 3 }],
+                isEnd: true
+              }
+            }
+          };
+          await runner.start(dialogue);
+          if (flags.get('count') !== 8) throw new Error(`Expected 8, got ${flags.get('count')}`);
+        }
+      },
+      {
+        name: 'Actions: decrement action',
+        fn: async () => {
+          const flags = createFlagStore();
+          flags.set('count', 10);
+          const runner = createDialogueRunner({ gameFlags: flags });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'Start',
+                actions: [{ type: 'decrement', flag: 'count', value: 3 }],
+                isEnd: true
+              }
+            }
+          };
+          await runner.start(dialogue);
+          if (flags.get('count') !== 7) throw new Error(`Expected 7, got ${flags.get('count')}`);
+        }
+      },
+      {
+        name: 'Actions: clear action',
+        fn: async () => {
+          const flags = createFlagStore();
+          flags.set('toDelete', 'value');
+          const runner = createDialogueRunner({ gameFlags: flags });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'Start',
+                actions: [{ type: 'clear', flag: 'toDelete' }],
+                isEnd: true
+              }
+            }
+          };
+          await runner.start(dialogue);
+          if (flags.get('toDelete') !== undefined) throw new Error('Clear action failed');
+        }
+      },
+      {
+        name: 'Actions: callback action',
+        fn: async () => {
+          let called = false;
+          const runner = createDialogueRunner({
+            gameFlags: createFlagStore(),
+            actionHandlers: {
+              testCallback: () => { called = true; }
+            }
+          });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'Start',
+                actions: [{ type: 'callback', name: 'testCallback' }],
+                isEnd: true
+              }
+            }
+          };
+          await runner.start(dialogue);
+          if (!called) throw new Error('Callback not executed');
+        }
+      },
+
+      // Conditions tests
+      {
+        name: 'Conditions: equality check',
+        fn: async () => {
+          const flags = createFlagStore();
+          flags.set('value', 5);
+          const runner = createDialogueRunner({ gameFlags: flags });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'Start',
+                choices: [
+                  { text: 'Match', next: 'end', conditions: { check: ['value', '==', 5] } }
+                ]
+              },
+              end: { text: 'End', isEnd: true }
+            }
+          };
+          await runner.start(dialogue);
+          const choices = runner.getChoices();
+          if (choices.length !== 1) throw new Error('Equality check failed');
+        }
+      },
+      {
+        name: 'Conditions: inequality check',
+        fn: async () => {
+          const flags = createFlagStore();
+          flags.set('value', 5);
+          const runner = createDialogueRunner({ gameFlags: flags });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'Start',
+                choices: [
+                  { text: 'No match', next: 'end', conditions: { check: ['value', '!=', 10] } }
+                ]
+              },
+              end: { text: 'End', isEnd: true }
+            }
+          };
+          await runner.start(dialogue);
+          const choices = runner.getChoices();
+          if (choices.length !== 1) throw new Error('Inequality check failed');
+        }
+      },
+      {
+        name: 'Conditions: greater than check',
+        fn: async () => {
+          const flags = createFlagStore();
+          flags.set('value', 10);
+          const runner = createDialogueRunner({ gameFlags: flags });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'Start',
+                choices: [
+                  { text: 'Greater', next: 'end', conditions: { check: ['value', '>', 5] } }
+                ]
+              },
+              end: { text: 'End', isEnd: true }
+            }
+          };
+          await runner.start(dialogue);
+          const choices = runner.getChoices();
+          if (choices.length !== 1) throw new Error('Greater than check failed');
+        }
+      },
+      {
+        name: 'Conditions: and condition',
+        fn: async () => {
+          const flags = createFlagStore();
+          flags.set('a', true);
+          flags.set('b', true);
+          const runner = createDialogueRunner({ gameFlags: flags });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'Start',
+                choices: [
+                  {
+                    text: 'Both',
+                    next: 'end',
+                    conditions: {
+                      and: [
+                        { check: ['a', '==', true] },
+                        { check: ['b', '==', true] }
+                      ]
+                    }
+                  }
+                ]
+              },
+              end: { text: 'End', isEnd: true }
+            }
+          };
+          await runner.start(dialogue);
+          const choices = runner.getChoices();
+          if (choices.length !== 1) throw new Error('And condition failed');
+        }
+      },
+      {
+        name: 'Conditions: or condition',
+        fn: async () => {
+          const flags = createFlagStore();
+          flags.set('a', true);
+          flags.set('b', false);
+          const runner = createDialogueRunner({ gameFlags: flags });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'Start',
+                choices: [
+                  {
+                    text: 'Either',
+                    next: 'end',
+                    conditions: {
+                      or: [
+                        { check: ['a', '==', true] },
+                        { check: ['b', '==', true] }
+                      ]
+                    }
+                  }
+                ]
+              },
+              end: { text: 'End', isEnd: true }
+            }
+          };
+          await runner.start(dialogue);
+          const choices = runner.getChoices();
+          if (choices.length !== 1) throw new Error('Or condition failed');
+        }
+      },
+      {
+        name: 'Conditions: not condition',
+        fn: async () => {
+          const flags = createFlagStore();
+          flags.set('locked', false);
+          const runner = createDialogueRunner({ gameFlags: flags });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'Start',
+                choices: [
+                  {
+                    text: 'Unlocked',
+                    next: 'end',
+                    conditions: {
+                      not: { check: ['locked', '==', true] }
+                    }
+                  }
+                ]
+              },
+              end: { text: 'End', isEnd: true }
+            }
+          };
+          await runner.start(dialogue);
+          const choices = runner.getChoices();
+          if (choices.length !== 1) throw new Error('Not condition failed');
+        }
+      },
+
+      // Text interpolation tests
+      {
+        name: 'Interpolation: replaces flag values',
+        fn: async () => {
+          const flags = createFlagStore();
+          flags.set('playerName', 'Hero');
+          const runner = createDialogueRunner({ gameFlags: flags });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'Hello {{playerName}}!',
+                choices: [{ text: 'Next', next: 'end' }]
+              },
+              end: { text: 'End', isEnd: true }
+            }
+          };
+          await runner.start(dialogue);
+          const node = runner.getCurrentNode();
+          if (!node || node.text !== 'Hello Hero!') throw new Error(`Expected 'Hello Hero!', got '${node ? node.text : 'null'}'`);
+        }
+      },
+      {
+        name: 'Interpolation: handles missing flags',
+        fn: async () => {
+          const runner = createDialogueRunner({ gameFlags: createFlagStore() });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'Hello {{missing}}!',
+                choices: [{ text: 'Next', next: 'end' }]
+              },
+              end: { text: 'End', isEnd: true }
+            }
+          };
+          await runner.start(dialogue);
+          const node = runner.getCurrentNode();
+          if (!node || node.text !== 'Hello !') throw new Error(`Expected 'Hello !', got '${node ? node.text : 'null'}'`);
+        }
+      },
+      {
+        name: 'Interpolation: custom interpolation functions',
+        fn: async () => {
+          const runner = createDialogueRunner({
+            gameFlags: createFlagStore(),
+            interpolation: {
+              time: () => 'noon'
+            }
+          });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'It is {{time}}.',
+                choices: [{ text: 'Next', next: 'end' }]
+              },
+              end: { text: 'End', isEnd: true }
+            }
+          };
+          await runner.start(dialogue);
+          const node = runner.getCurrentNode();
+          if (!node || node.text !== 'It is noon.') throw new Error(`Expected 'It is noon.', got '${node ? node.text : 'null'}'`);
+        }
+      },
+
+      // History & backtracking tests
+      {
+        name: 'History: records visited nodes',
+        fn: async () => {
+          const runner = createDialogueRunner({ gameFlags: createFlagStore() });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'Start',
+                choices: [{ text: 'Next', next: 'second' }]
+              },
+              second: { text: 'Second', isEnd: true }
+            }
+          };
+          await runner.start(dialogue);
+          await runner.choose(0);
+          const history = runner.getHistory();
+          if (history.length !== 1) throw new Error(`Expected 1 history entry, got ${history.length}`);
+        }
+      },
+      {
+        name: 'back: returns to previous node',
+        fn: async () => {
+          const runner = createDialogueRunner({ gameFlags: createFlagStore() });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'Start',
+                choices: [{ text: 'Next', next: 'second' }]
+              },
+              second: {
+                text: 'Second',
+                choices: [{ text: 'End', next: 'end' }]
+              },
+              end: { text: 'End', isEnd: true }
+            }
+          };
+          await runner.start(dialogue);
+          await runner.choose(0);
+          await runner.back();
+          const node = runner.getCurrentNode();
+          if (node.text !== 'Start') throw new Error('Back did not return to start');
+        }
+      },
+      {
+        name: 'restart: returns to start node',
+        fn: async () => {
+          const runner = createDialogueRunner({ gameFlags: createFlagStore() });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'Start',
+                choices: [{ text: 'Next', next: 'second' }]
+              },
+              second: { text: 'Second', isEnd: true }
+            }
+          };
+          await runner.start(dialogue);
+          await runner.choose(0);
+          await runner.restart();
+          const node = runner.getCurrentNode();
+          if (node.text !== 'Start') throw new Error('Restart did not return to start');
+        }
+      },
+      {
+        name: 'restart: clears history',
+        fn: async () => {
+          const runner = createDialogueRunner({ gameFlags: createFlagStore() });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'Start',
+                choices: [{ text: 'Next', next: 'second' }]
+              },
+              second: { text: 'Second', isEnd: true }
+            }
+          };
+          await runner.start(dialogue);
+          await runner.choose(0);
+          await runner.restart();
+          const history = runner.getHistory();
+          if (history.length !== 0) throw new Error('History not cleared');
+        }
+      },
+
+      // Serialization tests
+      {
+        name: 'Serialization: serialize returns state',
+        fn: async () => {
+          const runner = createDialogueRunner({ gameFlags: createFlagStore() });
+          const dialogue = {
+            id: 'test-dialogue',
+            startNode: 'start',
+            nodes: {
+              start: { text: 'Start', isEnd: true }
+            }
+          };
+          await runner.start(dialogue);
+          const state = runner.serialize();
+          if (!state.dialogueId || !state.currentNodeId) throw new Error('Invalid serialized state');
+          if (state.dialogueId !== 'test-dialogue') throw new Error('Wrong dialogue ID');
+        }
+      },
+      {
+        name: 'Serialization: deserialize restores state',
+        fn: async () => {
+          const runner = createDialogueRunner({ gameFlags: createFlagStore() });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'Start',
+                choices: [{ text: 'Next', next: 'second' }]
+              },
+              second: {
+                text: 'Second',
+                choices: [{ text: 'End', next: 'end' }]
+              },
+              end: { text: 'End', isEnd: true }
+            }
+          };
+          await runner.start(dialogue);
+          await runner.choose(0);
+          const state = runner.serialize();
+
+          const runner2 = createDialogueRunner({ gameFlags: createFlagStore() });
+          await runner2.start(dialogue);
+          await runner2.deserialize(state);
+          const node = runner2.getCurrentNode();
+          if (!node || node.text !== 'Second') throw new Error('State not restored correctly');
+        }
+      },
+
+      // validateDialogue tests
+      {
+        name: 'validateDialogue: accepts valid dialogue',
+        fn: async () => {
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: { text: 'Hello', isEnd: true }
+            }
+          };
+          const result = validateDialogue(dialogue);
+          if (!result.valid) throw new Error('Valid dialogue marked as invalid: ' + result.errors.join(', '));
+        }
+      },
+      {
+        name: 'validateDialogue: detects missing startNode',
+        fn: async () => {
+          const dialogue = {
+            id: 'test',
+            startNode: 'missing',
+            nodes: {
+              start: { text: 'Hello', isEnd: true }
+            }
+          };
+          const result = validateDialogue(dialogue);
+          if (result.valid) throw new Error('Invalid dialogue marked as valid');
+          if (!result.errors.some(e => e.includes('Start node'))) throw new Error('Did not detect missing start node');
+        }
+      },
+      {
+        name: 'validateDialogue: detects orphan nodes',
+        fn: async () => {
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: { text: 'Start', isEnd: true },
+              orphan: { text: 'Orphan', isEnd: true }
+            }
+          };
+          const result = validateDialogue(dialogue);
+          if (result.valid) throw new Error('Invalid dialogue marked as valid');
+          if (!result.errors.some(e => e.includes('Unreachable'))) throw new Error('Did not detect orphan node');
+        }
+      },
+      {
+        name: 'validateDialogue: detects missing choice targets',
+        fn: async () => {
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'Start',
+                choices: [{ text: 'Missing', next: 'nonexistent' }]
+              }
+            }
+          };
+          const result = validateDialogue(dialogue);
+          if (result.valid) throw new Error('Invalid dialogue marked as valid');
+          if (!result.errors.some(e => e.includes('non-existent'))) throw new Error('Did not detect missing target');
+        }
+      },
+
+      // Edge cases
+      {
+        name: 'Edge: handles single node dialogue',
+        fn: async () => {
+          const runner = createDialogueRunner({ gameFlags: createFlagStore() });
+          const dialogue = {
+            id: 'test',
+            startNode: 'only',
+            nodes: {
+              only: { text: 'Only node', isEnd: true }
+            }
+          };
+          const result = await runner.start(dialogue);
+          if (!result.isEnded) throw new Error('Single node dialogue should end immediately');
+        }
+      },
+      {
+        name: 'Edge: handles unicode in text',
+        fn: async () => {
+          const runner = createDialogueRunner({ gameFlags: createFlagStore() });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: {
+                text: 'Hello 世界! 🌍',
+                choices: [{ text: 'Next', next: 'end' }]
+              },
+              end: { text: 'End', isEnd: true }
+            }
+          };
+          await runner.start(dialogue);
+          const node = runner.getCurrentNode();
+          if (!node || !node.text.includes('世界')) throw new Error('Unicode not preserved');
+          if (!node.text.includes('🌍')) throw new Error('Emoji not preserved');
+        }
+      },
+      {
+        name: 'Edge: handles empty choices array',
+        fn: async () => {
+          const runner = createDialogueRunner({ gameFlags: createFlagStore() });
+          const dialogue = {
+            id: 'test',
+            startNode: 'start',
+            nodes: {
+              start: { text: 'No choices', choices: [] }
+            }
+          };
+          const result = await runner.start(dialogue);
+          if (!result.isEnded) throw new Error('Empty choices should end dialogue');
+        }
+      }
+    ];
+
+    function logResult(name, status, error) {
+      const output = document.getElementById('test-output');
+      const className = status === 'PASS' ? 'test-pass' : 'test-fail';
+      const errorMsg = error ? ` - ${error}` : '';
+      output.innerHTML += `<div class="${className}">[${status}] ${name}${errorMsg}</div>`;
+      output.scrollTop = output.scrollHeight;
+    }
+
+    function logSummary(passed, failed) {
+      const summary = document.getElementById('summary');
+      const total = passed + failed;
+      const className = failed === 0 ? 'test-pass' : 'test-fail';
+      summary.innerHTML = `<span class="${className}">✓ ${passed}/${total} tests passed</span>`;
+      if (failed > 0) {
+        summary.innerHTML += ` <span class="test-fail">✗ ${failed} failed</span>`;
+      }
+    }
+
+    async function runAllTests() {
+      clearResults();
+      const progress = document.getElementById('progress');
+      progress.textContent = 'Running tests...';
+
+      let passed = 0, failed = 0;
+      for (let i = 0; i < tests.length; i++) {
+        const test = tests[i];
+        progress.textContent = `Running test ${i + 1}/${tests.length}: ${test.name}`;
+        try {
+          await test.fn();
+          logResult(test.name, 'PASS');
+          passed++;
+        } catch (e) {
+          logResult(test.name, 'FAIL', e.message);
+          failed++;
+        }
+      }
+
+      progress.textContent = '';
+      logSummary(passed, failed);
+    }
+
+    function clearResults() {
+      document.getElementById('test-output').innerHTML = '';
+      document.getElementById('summary').innerHTML = '';
+      document.getElementById('progress').textContent = '';
+    }
+
+    // ============================================
+    // INTERACTIVE DEMOS
+    // ============================================
+
+    // Simple Dialogue Demo
+    const simpleDialogue = {
+      id: 'simple-demo',
+      startNode: 'greeting',
+      nodes: {
+        greeting: {
+          speaker: 'Innkeeper',
+          text: 'Welcome to the Rusty Anchor! What can I do for you?',
+          choices: [
+            { text: 'Tell me about this place.', next: 'about' },
+            { text: 'I need a room for the night.', next: 'room' },
+            { text: 'Just passing through.', next: 'farewell' }
+          ]
+        },
+        about: {
+          speaker: 'Innkeeper',
+          text: 'This inn has served travelers for three generations. We pride ourselves on warm beds and cold ale!',
+          choices: [
+            { text: 'Sounds good. I need a room.', next: 'room' },
+            { text: 'Thanks for the info.', next: 'farewell' }
+          ]
+        },
+        room: {
+          speaker: 'Innkeeper',
+          text: 'A room costs 5 gold pieces. Interested?',
+          choices: [
+            { text: 'Sure, here you go.', next: 'room-taken' },
+            { text: 'Too expensive. Goodbye.', next: 'farewell' }
+          ]
+        },
+        'room-taken': {
+          speaker: 'Innkeeper',
+          text: 'Excellent! Your room is upstairs, second door on the left. Sleep well!',
+          isEnd: true
+        },
+        farewell: {
+          speaker: 'Innkeeper',
+          text: 'Safe travels, friend!',
+          isEnd: true
+        }
+      }
+    };
+
+    function startSimpleDialogue() {
+      const flags = createFlagStore();
+      const speakers = {
+        Innkeeper: { name: 'Marcus', color: '#8B4513' }
+      };
+
+      simpleRunner = createDialogueRunner({
+        gameFlags: flags,
+        speakers: speakers
+      });
+
+      simpleRunner.start(simpleDialogue).then(() => {
+        updateSimpleDisplay();
+      });
+    }
+
+    function updateSimpleDisplay() {
+      if (!simpleRunner) return;
+
+      const node = simpleRunner.getCurrentNode();
+      const display = document.getElementById('simple-display');
+      const choicesDiv = document.getElementById('simple-choices');
+      const flagsDiv = document.getElementById('simple-flags');
+
+      if (!node) {
+        display.innerHTML = '<div class="text">Dialogue ended. Click "Start Dialogue" or "Restart".</div>';
+        choicesDiv.innerHTML = '';
+        return;
+      }
+
+      display.innerHTML = `
+        ${node.speaker ? `<div class="speaker">${node.speaker}:</div>` : ''}
+        <div class="text">${node.text}</div>
+      `;
+
+      const choices = simpleRunner.getChoices();
+      choicesDiv.innerHTML = '';
+      choices.forEach((choice, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.textContent = choice.text;
+        btn.onclick = () => makeSimpleChoice(index);
+        choicesDiv.appendChild(btn);
+      });
+
+      if (choices.length === 0 && !simpleRunner.isEnded()) {
+        choicesDiv.innerHTML = '<div class="text">Auto-advancing...</div>';
+      }
+    }
+
+    function makeSimpleChoice(index) {
+      if (!simpleRunner) return;
+      simpleRunner.choose(index).then(() => {
+        updateSimpleDisplay();
+      });
+    }
+
+    function restartCurrentDialogue() {
+      if (!simpleRunner) {
+        startSimpleDialogue();
+      } else {
+        simpleRunner.restart().then(() => {
+          updateSimpleDisplay();
+        });
+      }
+    }
+
+    function goBack() {
+      if (!simpleRunner) return;
+      simpleRunner.back().then(() => {
+        updateSimpleDisplay();
+      });
+    }
+
+    // Flag System Demo
+    const flagDialogue = {
+      id: 'flag-demo',
+      startNode: 'start',
+      nodes: {
+        start: {
+          speaker: 'Guard',
+          text: 'Halt! State your business.',
+          actions: [{ type: 'set', flag: 'conv:metGuard', value: true }],
+          choices: [
+            { text: 'I come in peace.', next: 'peaceful' },
+            { text: 'I seek the treasure.', next: 'treasure-seeker' }
+          ]
+        },
+        peaceful: {
+          speaker: 'Guard',
+          text: 'Good. We have enough trouble around here.',
+          actions: [{ type: 'set', flag: 'game:reputation', value: 5 }],
+          choices: [
+            { text: 'What kind of trouble?', next: 'trouble' },
+            { text: 'I should be going.', next: 'farewell' }
+          ]
+        },
+        'treasure-seeker': {
+          speaker: 'Guard',
+          text: 'Another treasure hunter, eh? You need permission from the captain.',
+          actions: [{ type: 'set', flag: 'conv:askedAboutTreasure', value: true }],
+          choices: [
+            {
+              text: 'I already have permission.',
+              next: 'permission-check',
+              conditions: { check: ['game:hasPermission', '==', true] }
+            },
+            {
+              text: 'How do I get permission?',
+              next: 'permission-needed',
+              conditions: { check: ['game:hasPermission', '!=', true] }
+            }
+          ]
+        },
+        trouble: {
+          speaker: 'Guard',
+          text: 'Bandits on the road. Cultists in the woods. The usual.',
+          choices: [
+            { text: 'Sounds rough.', next: 'farewell' }
+          ]
+        },
+        'permission-check': {
+          speaker: 'Guard',
+          text: 'Ah, I see your papers. Go ahead.',
+          isEnd: true
+        },
+        'permission-needed': {
+          speaker: 'Guard',
+          text: 'Find Captain Reynolds in the barracks. He handles all that.',
+          choices: [
+            { text: 'Thanks.', next: 'farewell' }
+          ]
+        },
+        farewell: {
+          speaker: 'Guard',
+          text: 'Move along then.',
+          isEnd: true
+        }
+      }
+    };
+
+    function startFlagDialogue() {
+      const gameFlags = createFlagStore();
+      // Uncomment to test permission path:
+      // gameFlags.set('hasPermission', true);
+
+      const speakers = {
+        Guard: { name: 'Guard', color: '#654321' }
+      };
+
+      flagRunner = createDialogueRunner({
+        gameFlags: gameFlags,
+        speakers: speakers
+      });
+
+      flagRunner.start(flagDialogue).then(() => {
+        updateFlagDisplay();
+      });
+    }
+
+    function updateFlagDisplay() {
+      if (!flagRunner) return;
+
+      const node = flagRunner.getCurrentNode();
+      const display = document.getElementById('flag-display');
+      const choicesDiv = document.getElementById('flag-choices');
+
+      if (!node) {
+        display.innerHTML = '<div class="text">Dialogue ended.</div>';
+        choicesDiv.innerHTML = '';
+        updateFlagStatus();
+        return;
+      }
+
+      display.innerHTML = `
+        ${node.speaker ? `<div class="speaker">${node.speaker}:</div>` : ''}
+        <div class="text">${node.text}</div>
+      `;
+
+      const choices = flagRunner.getChoices({ includeUnavailable: true });
+      choicesDiv.innerHTML = '';
+      choices.forEach((choice, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.textContent = choice.text + (choice.available === false ? ' [Unavailable]' : '');
+        btn.disabled = choice.available === false;
+        btn.onclick = () => makeFlagChoice(index);
+        choicesDiv.appendChild(btn);
+      });
+
+      updateFlagStatus();
+    }
+
+    function makeFlagChoice(index) {
+      if (!flagRunner) return;
+      // Get only available choices for the actual index
+      const availableChoices = flagRunner.getChoices();
+      const allChoices = flagRunner.getChoices({ includeUnavailable: true });
+      const choice = allChoices[index];
+
+      // Find the real index in available choices
+      const realIndex = availableChoices.findIndex(c => c.text === choice.text);
+      if (realIndex === -1) return; // Choice not available
+
+      flagRunner.choose(realIndex).then(() => {
+        updateFlagDisplay();
+      });
+    }
+
+    function updateFlagStatus() {
+      if (!flagRunner) return;
+
+      const gameFlags = flagRunner.serialize().conversationFlags; // Hack to get internal flags
+      const convFlags = flagRunner.getConversationFlags();
+
+      document.getElementById('game-flags').textContent =
+        Object.keys(gameFlags).length ? JSON.stringify(gameFlags) : '(none)';
+      document.getElementById('conv-flags').textContent =
+        Object.keys(convFlags).length ? JSON.stringify(convFlags) : '(none)';
+    }
+
+    function resetFlags() {
+      if (flagRunner) {
+        flagRunner.clearConversationFlags();
+        updateFlagStatus();
+      }
+    }
+
+    // Interpolation Demo
+    function startInterpolationDialogue() {
+      const playerName = document.getElementById('player-name').value || 'Adventurer';
+      const gold = parseInt(document.getElementById('player-gold').value) || 50;
+
+      const flags = createFlagStore();
+      flags.set('gold', gold);
+
+      const speakers = {
+        Merchant: { name: 'Merchant' }
+      };
+
+      const dialogue = {
+        id: 'interp-demo',
+        startNode: 'start',
+        nodes: {
+          start: {
+            speaker: 'Merchant',
+            text: 'Greetings, {{playerName}}! I see you have {{gold}} gold pieces.',
+            choices: [
+              {
+                text: 'Buy sword (50 gold)',
+                next: 'buy-sword',
+                conditions: { check: ['gold', '>=', 50] },
+                actions: [{ type: 'decrement', flag: 'gold', value: 50 }]
+              },
+              {
+                text: 'Cannot afford it',
+                next: 'too-poor',
+                conditions: { check: ['gold', '<', 50] }
+              },
+              { text: 'Just browsing', next: 'farewell' }
+            ]
+          },
+          'buy-sword': {
+            speaker: 'Merchant',
+            text: 'Excellent choice! You now have {{gold}} gold remaining.',
+            choices: [
+              { text: 'Thanks!', next: 'farewell' }
+            ]
+          },
+          'too-poor': {
+            speaker: 'Merchant',
+            text: 'Come back when you have more gold, {{playerName}}.',
+            isEnd: true
+          },
+          farewell: {
+            speaker: 'Merchant',
+            text: 'Safe travels!',
+            isEnd: true
+          }
+        }
+      };
+
+      interpRunner = createDialogueRunner({
+        gameFlags: flags,
+        speakers: speakers,
+        interpolation: {
+          playerName: () => playerName
+        }
+      });
+
+      interpRunner.start(dialogue).then(() => {
+        updateInterpDisplay();
+      });
+    }
+
+    function updateInterpDisplay() {
+      if (!interpRunner) return;
+
+      const node = interpRunner.getCurrentNode();
+      const display = document.getElementById('interp-display');
+      const choicesDiv = document.getElementById('interp-choices');
+
+      if (!node) {
+        display.innerHTML = '<div class="text">Dialogue ended.</div>';
+        choicesDiv.innerHTML = '';
+        return;
+      }
+
+      display.innerHTML = `
+        ${node.speaker ? `<div class="speaker">${node.speaker}:</div>` : ''}
+        <div class="text">${node.text}</div>
+      `;
+
+      const choices = interpRunner.getChoices();
+      choicesDiv.innerHTML = '';
+      choices.forEach((choice, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.textContent = choice.text;
+        btn.onclick = () => makeInterpChoice(index);
+        choicesDiv.appendChild(btn);
+      });
+    }
+
+    function makeInterpChoice(index) {
+      if (!interpRunner) return;
+      interpRunner.choose(index).then(() => {
+        updateInterpDisplay();
+      });
+    }
+
+    // Serialization Demo
+    function startSerializationDemo() {
+      const flags = createFlagStore();
+      const dialogue = {
+        id: 'serial-demo',
+        startNode: 'start',
+        nodes: {
+          start: {
+            text: 'Chapter 1: The Beginning',
+            choices: [
+              { text: 'Continue', next: 'middle' }
+            ]
+          },
+          middle: {
+            text: 'Chapter 2: The Middle',
+            actions: [{ type: 'set', flag: 'conv:chapter', value: 2 }],
+            choices: [
+              { text: 'Continue', next: 'end' }
+            ]
+          },
+          end: {
+            text: 'Chapter 3: The End',
+            actions: [{ type: 'set', flag: 'conv:chapter', value: 3 }],
+            isEnd: true
+          }
+        }
+      };
+
+      serialRunner = createDialogueRunner({ gameFlags: flags });
+      serialRunner.start(dialogue).then(() => {
+        updateSerialDisplay();
+      });
+    }
+
+    function updateSerialDisplay() {
+      if (!serialRunner) return;
+
+      const node = serialRunner.getCurrentNode();
+      const display = document.getElementById('serial-display');
+      const choicesDiv = document.getElementById('serial-choices');
+
+      if (!node) {
+        display.innerHTML = '<div class="text">Dialogue ended. Load a saved state to continue.</div>';
+        choicesDiv.innerHTML = '';
+        return;
+      }
+
+      display.innerHTML = `<div class="text">${node.text}</div>`;
+
+      const choices = serialRunner.getChoices();
+      choicesDiv.innerHTML = '';
+      choices.forEach((choice, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.textContent = choice.text;
+        btn.onclick = () => makeSerialChoice(index);
+        choicesDiv.appendChild(btn);
+      });
+    }
+
+    function makeSerialChoice(index) {
+      if (!serialRunner) return;
+      serialRunner.choose(index).then(() => {
+        updateSerialDisplay();
+      });
+    }
+
+    function saveDialogueState() {
+      if (!serialRunner) {
+        alert('Start a dialogue first!');
+        return;
+      }
+
+      try {
+        savedState = serialRunner.serialize();
+        document.getElementById('serial-state').textContent =
+          'Saved State: ' + JSON.stringify(savedState, null, 2);
+        alert('State saved!');
+      } catch (e) {
+        alert('Error saving state: ' + e.message);
+      }
+    }
+
+    function loadDialogueState() {
+      if (!savedState) {
+        alert('No saved state available!');
+        return;
+      }
+
+      if (!serialRunner) {
+        startSerializationDemo();
+      }
+
+      try {
+        serialRunner.deserialize(savedState).then(() => {
+          updateSerialDisplay();
+          alert('State loaded!');
+        });
+      } catch (e) {
+        alert('Error loading state: ' + e.message);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -6,7 +6,6 @@ import type {
   DialogueRunner,
   DialogueRunnerOptions,
   DialogueDefinition,
-  DialogueState,
   NodeDefinition,
   ChoiceDefinition,
   GetChoicesOptions,
@@ -133,6 +132,7 @@ async function executeAction(
   action: Action,
   gameFlags: FlagStore,
   convFlags: FlagStore,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Intentionally flexible callback registry, users provide typed implementations
   actionHandlers: Record<string, (...args: any[]) => any>,
   onActionExecuted?: (action: Action, result?: unknown) => void
 ): Promise<unknown> {
@@ -146,7 +146,7 @@ async function executeAction(
         // For conversation scope, strip prefix; for game scope, keep original key
         const storeKey = scope === 'conv' ? key : action.flag
         store.set(storeKey, action.value)
-        result = undefined
+        result = action.value
         break
       }
       case 'clear': {
@@ -154,7 +154,7 @@ async function executeAction(
         const store = scope === 'game' ? gameFlags : convFlags
         const storeKey = scope === 'conv' ? key : action.flag
         store.delete(storeKey)
-        result = undefined
+        result = true
         break
       }
       case 'increment': {
@@ -209,12 +209,14 @@ async function interpolateText(
   // Replace {{...}} patterns
   const matches = Array.from(result.matchAll(/\{\{(\w+(?::\w+)?)\}\}/g))
   for (const match of matches) {
-    const key = match[1]!
+    const key = match[1]
+    if (!key) continue
     let value = ''
 
     // Check custom interpolation first - support async functions
     if (customInterpolation[key]) {
-      const interpolated = await customInterpolation[key]!(context)
+      const interpolated = await customInterpolation[key](context)
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- interpolated can be any type from user functions
       value = String(interpolated || '')
     }
     // Special case for speaker
@@ -257,11 +259,13 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
   } = options
 
   // Validate gameFlags
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Defensive runtime check for user-provided data
   if (gameFlags && typeof gameFlags.get !== 'function') {
     throw new ValidationError('gameFlags must be a valid FlagStore', 'gameFlags')
   }
 
   // Validate actionHandlers
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Defensive runtime check for user-provided data
   if (actionHandlers) {
     for (const [key, handler] of Object.entries(actionHandlers)) {
       if (typeof handler !== 'function') {
@@ -286,6 +290,7 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
   let currentInterpolatedNode: NodeDefinition | null = null
   let conversationFlags: FlagStore = createInternalFlagStore()
   let history: HistoryEntry[] = []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Event system accepts varied argument types
   const eventHandlers: Record<string, (((...args: any[]) => void)[])> = {}
 
   /**
@@ -300,14 +305,14 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
     const speaker = node.speaker ? speakers[node.speaker] : undefined
     const context: InterpolationContext = {
       currentNode: node,
-      speaker,
+      ...(speaker ? { speaker } : {}),
       gameFlags,
       conversationFlags,
     }
 
     // Handle i18n
     let text = node.text
-    if (i18n && i18n.hasKey(text)) {
+    if (i18n?.hasKey(text)) {
       text = i18n.t(text, {})
     }
 
@@ -341,6 +346,7 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
         nodeId: currentNodeId,
         node,
         timestamp: Date.now(),
+        conversationFlags: { ...conversationFlags.all() },
       })
 
       currentNodeId = node.next
@@ -405,8 +411,12 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
         }
       }
 
+      if (!currentInterpolatedNode) {
+        throw new ValidationError('Failed to initialize dialogue state')
+      }
+
       return {
-        currentNode: currentInterpolatedNode!,
+        currentNode: currentInterpolatedNode,
         availableChoices: runner.getChoices() as ChoiceDefinition[],
         isEnded,
       }
@@ -416,7 +426,7 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
       if (!currentDialogue || !currentNodeId) return []
 
       const node = currentDialogue.nodes[currentNodeId]
-      if (!node || !node.choices) return []
+      if (!node?.choices) return []
 
       const { includeUnavailable = false, includeDisabled = false, filter } = options
 
@@ -474,19 +484,19 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
       }
 
       const node = currentDialogue.nodes[currentNodeId]
-      if (!node || !node.choices) {
+      if (!node?.choices) {
         throw new ValidationError('No choices available')
       }
 
       // Validate index is within ORIGINAL choices list
       if (index < 0 || index >= node.choices.length) {
-        throw new ValidationError(`Invalid choice index: ${index}`)
+        throw new ValidationError(`Invalid choice index: ${String(index)}`)
       }
 
       // Get choice from ORIGINAL list
       const choice = node.choices[index]
       if (!choice) {
-        throw new ValidationError(`Invalid choice index: ${index}`)
+        throw new ValidationError(`Invalid choice index: ${String(index)}`)
       }
 
       // Validate choice is not disabled
@@ -512,6 +522,7 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
         choiceIndex: index,
         choice,
         timestamp: Date.now(),
+        conversationFlags: { ...conversationFlags.all() },
       })
 
       // Execute choice actions
@@ -555,8 +566,12 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
         }
       }
 
+      if (!currentInterpolatedNode) {
+        throw new ValidationError('Failed to complete choice transition')
+      }
+
       return {
-        currentNode: currentInterpolatedNode!,
+        currentNode: currentInterpolatedNode,
         availableChoices: runner.getChoices() as ChoiceDefinition[],
         isEnded,
       }
@@ -578,7 +593,8 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
     },
 
     getCurrentNode: () => {
-      if (runner.isEnded()) {
+      // Only return null if explicitly marked as ended, not for implicit end states
+      if (currentInterpolatedNode?.isEnd) {
         return null
       }
       return currentInterpolatedNode
@@ -596,9 +612,14 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
 
       currentNodeId = lastEntry.nodeId
 
+      // Restore conversation flags from snapshot
+      conversationFlags.clear()
+      for (const [key, value] of Object.entries(lastEntry.conversationFlags)) {
+        conversationFlags.set(key, value)
+      }
+
       await updateInterpolatedNode()
 
-      // Restore conversation flags (simplified - would need full state restoration)
       const node = currentDialogue?.nodes[currentNodeId]
       if (node) {
         const speaker = node.speaker ? speakers[node.speaker] : undefined
@@ -606,18 +627,23 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
       }
     },
 
-    restart: (options: RestartOptions = {}) => {
+    restart: async (options: RestartOptions = {}) => {
       if (!currentDialogue) {
         throw new ValidationError('No active dialogue')
       }
 
       history = []
 
+      // Start dialogue (this runs start node actions)
+      const state = await runner.start(currentDialogue)
+
+      // Clear conversation flags AFTER start if not preserving
       if (!options.preserveConversationFlags) {
-        conversationFlags = createInternalFlagStore()
+        conversationFlags.clear()
+        await updateInterpolatedNode()
       }
 
-      return runner.start(currentDialogue)
+      return state
     },
 
     jumpTo: async (nodeId: string) => {
@@ -640,6 +666,7 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
             nodeId: previousNodeId,
             node: prevNode,
             timestamp: Date.now(),
+            conversationFlags: { ...conversationFlags.all() },
           })
         }
       }
@@ -696,11 +723,10 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
       conversationFlags.clear()
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Event system accepts varied callback signatures
     on: (event: string, callback: (...args: any[]) => void) => {
-      if (!eventHandlers[event]) {
-        eventHandlers[event] = []
-      }
-      eventHandlers[event]!.push(callback)
+      eventHandlers[event] ??= []
+      eventHandlers[event].push(callback)
     },
   }
 

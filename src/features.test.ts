@@ -225,6 +225,88 @@ describe('Conditions', () => {
       const choices = runner.getChoices()
       expect(choices.length).toBe(0)
     })
+
+    it('evaluates greater than check', async () => {
+      const gameFlags = createMockFlagStore()
+      gameFlags.set('level', 10)
+      const runner = createDialogueRunner({ gameFlags })
+      const dialogue: DialogueDefinition = {
+        id: 'test',
+        startNode: 'start',
+        nodes: {
+          start: {
+            text: 'Start',
+            choices: [
+              { text: 'Advanced', next: 'end', conditions: { check: ['level', '>', 5] } },
+            ],
+          },
+          end: { text: 'End' },
+        },
+      }
+      await runner.start(dialogue)
+      const choices = runner.getChoices()
+      expect(choices.length).toBe(1)
+    })
+
+    it('evaluates less than check', async () => {
+      const gameFlags = createMockFlagStore()
+      gameFlags.set('health', 10)
+      const runner = createDialogueRunner({ gameFlags })
+      const dialogue: DialogueDefinition = {
+        id: 'test',
+        startNode: 'start',
+        nodes: {
+          start: {
+            text: 'Start',
+            choices: [
+              { text: 'Low health', next: 'end', conditions: { check: ['health', '<', 50] } },
+            ],
+          },
+          end: { text: 'End' },
+        },
+      }
+      await runner.start(dialogue)
+      const choices = runner.getChoices()
+      expect(choices.length).toBe(1)
+    })
+
+    it('evaluates nested and/or conditions', async () => {
+      const gameFlags = createMockFlagStore()
+      gameFlags.set('hasKey', true)
+      gameFlags.set('hasMap', true)
+      gameFlags.set('hasTorch', false)
+      const runner = createDialogueRunner({ gameFlags })
+      const dialogue: DialogueDefinition = {
+        id: 'test',
+        startNode: 'start',
+        nodes: {
+          start: {
+            text: 'Start',
+            choices: [
+              {
+                text: 'Enter',
+                next: 'end',
+                conditions: {
+                  and: [
+                    {
+                      or: [
+                        { check: ['hasKey', '==', true] },
+                        { check: ['hasTorch', '==', true] },
+                      ],
+                    },
+                    { check: ['hasMap', '==', true] },
+                  ],
+                },
+              },
+            ],
+          },
+          end: { text: 'End' },
+        },
+      }
+      await runner.start(dialogue)
+      const choices = runner.getChoices()
+      expect(choices.length).toBe(1)
+    })
   })
 
   describe('Choice Filtering', () => {
@@ -358,6 +440,25 @@ describe('Text Interpolation', () => {
       const state = await runner.start(dialogue)
       expect(state.currentNode.text).toBe('Hello !')
     })
+
+    it('replaces multiple variables in same text', async () => {
+      const gameFlags = createMockFlagStore()
+      gameFlags.set('playerName', 'Hero')
+      gameFlags.set('gold', 100)
+      gameFlags.set('location', 'Village')
+      const runner = createDialogueRunner({ gameFlags })
+      const dialogue: DialogueDefinition = {
+        id: 'test',
+        startNode: 'start',
+        nodes: {
+          start: {
+            text: 'Welcome {{playerName}}! You have {{gold}} gold in {{location}}.',
+          },
+        },
+      }
+      const state = await runner.start(dialogue)
+      expect(state.currentNode.text).toBe('Welcome Hero! You have 100 gold in Village.')
+    })
   })
 
   describe('Custom Interpolation', () => {
@@ -486,7 +587,7 @@ describe('Speaker System', () => {
       expect(onNodeEnter.mock.calls[0]?.[1]).toBeDefined()
     })
 
-    it('handles missing speaker gracefully', async () => {
+    it('unknown speaker returns undefined', async () => {
       const onNodeEnter = vi.fn()
       const runner = createDialogueRunner({ onNodeEnter })
       const dialogue: DialogueDefinition = {
@@ -499,7 +600,12 @@ describe('Speaker System', () => {
           },
         },
       }
-      await expect(runner.start(dialogue)).resolves.not.toThrow()
+      await runner.start(dialogue)
+      expect(onNodeEnter).toHaveBeenCalled()
+      const speaker = onNodeEnter.mock.calls[0]?.[1]
+      // Unknown speakers return undefined to allow UIs to distinguish
+      // between character dialogue (has speaker) and narrator text (no speaker)
+      expect(speaker).toBeUndefined()
     })
   })
 
@@ -865,9 +971,41 @@ describe('History & Backtracking', () => {
       }
       await runner.start(dialogue)
       await runner.choose(0)
+
+      // First verify default behavior clears flags
+      const runner2 = createDialogueRunner()
+      await runner2.start(dialogue)
+      await runner2.choose(0)
+      await runner2.restart()
+      const clearedFlags = runner2.getConversationFlags()
+      expect(Object.keys(clearedFlags).length).toBe(0)
+
+      // Now test with preserveConversationFlags
       await runner.restart({ preserveConversationFlags: true })
       const flags = runner.getConversationFlags()
       expect(flags['preserved']).toBe(true)
+    })
+
+    it('does not clear game flags', async () => {
+      const gameFlags = createMockFlagStore()
+      gameFlags.set('persistent', 'value')
+      const runner = createDialogueRunner({ gameFlags })
+      const dialogue: DialogueDefinition = {
+        id: 'test',
+        startNode: 'start',
+        nodes: {
+          start: {
+            text: 'Start',
+            actions: [{ type: 'set', flag: 'persistent', value: 'updated' }],
+            choices: [{ text: 'Go', next: 'end' }],
+          },
+          end: { text: 'End' },
+        },
+      }
+      await runner.start(dialogue)
+      await runner.choose(0)
+      await runner.restart()
+      expect(gameFlags.get('persistent')).toBe('updated')
     })
   })
 
@@ -911,12 +1049,16 @@ describe('History & Backtracking', () => {
       }
       await runner.start(dialogue)
       const historyBefore = runner.getHistory().length
+      expect(historyBefore).toBe(0)
       await runner.jumpTo('middle')
       const history = runner.getHistory()
-      expect(history.length).toBeGreaterThan(historyBefore)
-      // Verify the jump was recorded
+      expect(history.length).toBe(1)
+      // Verify the jump was recorded with proper data
       const lastEntry = history[history.length - 1]
       expect(lastEntry).toBeDefined()
+      expect(lastEntry?.nodeId).toBe('start')
+      expect(lastEntry?.timestamp).toBeDefined()
+      expect(typeof lastEntry?.timestamp).toBe('number')
     })
 
     it('fires appropriate events', async () => {
@@ -1537,7 +1679,10 @@ describe('Serialization', () => {
       await runner2.deserialize(state)
       const choices = runner2.getChoices()
       expect(choices.length).toBe(1)
-      expect(() => runner2.choose(0)).not.toThrow()
+      expect(choices[0]?.text).toBe('End')
+      // Properly test async choose() function
+      await expect(runner2.choose(0)).resolves.not.toThrow()
+      expect(runner2.getCurrentNode()?.text).toBe('End')
     })
 
     it('conditions work after restore', async () => {
@@ -1938,7 +2083,7 @@ describe('Edge Cases', () => {
       await expect(runner.start(dialogue)).resolves.not.toThrow()
     })
 
-    it('history does not explode memory', async () => {
+    it('handles 1000 history entries', async () => {
       const runner = createDialogueRunner()
       const dialogue: DialogueDefinition = {
         id: 'test',
@@ -1951,11 +2096,17 @@ describe('Edge Cases', () => {
         },
       }
       await runner.start(dialogue)
-      for (let i = 0; i < 100; i++) {
+      for (let i = 0; i < 1000; i++) {
         await runner.choose(0)
       }
       const history = runner.getHistory()
-      expect(history.length).toBeLessThan(200) // Some reasonable limit
+      // Verify all 1000 entries are recorded
+      expect(history.length).toBe(1000)
+      // Verify structure is intact
+      expect(history[0]).toHaveProperty('nodeId')
+      expect(history[0]).toHaveProperty('timestamp')
+      expect(history[999]).toHaveProperty('nodeId')
+      expect(history[999]).toHaveProperty('timestamp')
     })
   })
 

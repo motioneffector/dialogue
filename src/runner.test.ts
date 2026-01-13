@@ -153,6 +153,44 @@ describe('createDialogueRunner()', () => {
   })
 })
 
+describe('runner.start() - Validation', () => {
+  it('throws ValidationError for missing startNode', async () => {
+    const runner = createDialogueRunner()
+    const dialogue: DialogueDefinition = {
+      id: 'test',
+      startNode: 'nonexistent',
+      nodes: {
+        start: { text: 'Start' },
+      },
+    }
+    await expect(runner.start(dialogue)).rejects.toThrow(ValidationError)
+  })
+
+  it('throws ValidationError for invalid dialogue structure', async () => {
+    const runner = createDialogueRunner()
+    const dialogue: any = {
+      id: 'test',
+      // Missing startNode
+      nodes: {
+        start: { text: 'Start' },
+      },
+    }
+    await expect(runner.start(dialogue)).rejects.toThrow(ValidationError)
+  })
+
+  it('throws ValidationError if startNode not in nodes', async () => {
+    const runner = createDialogueRunner()
+    const dialogue: DialogueDefinition = {
+      id: 'test',
+      startNode: 'missing',
+      nodes: {
+        start: { text: 'Start' },
+      },
+    }
+    await expect(runner.start(dialogue)).rejects.toThrow(ValidationError)
+  })
+})
+
 describe('runner.start()', () => {
   describe('Basic Start', () => {
     it('starts dialogue at startNode', async () => {
@@ -180,13 +218,25 @@ describe('runner.start()', () => {
 
     it('clears conversation flags from previous dialogue', async () => {
       const runner = createDialogueRunner()
-      const dialogue = createTestDialogue()
-      await runner.start(dialogue)
-      // Set a conversation flag somehow
+      const dialogue1: DialogueDefinition = {
+        id: 'test1',
+        startNode: 'start',
+        nodes: {
+          start: {
+            text: 'Start',
+            actions: [{ type: 'set', flag: 'conv:temp', value: true }],
+          },
+        },
+      }
+      await runner.start(dialogue1)
       const flags1 = runner.getConversationFlags()
-      await runner.start(dialogue) // Start again
+      expect(flags1['temp']).toBe(true)
+
+      const dialogue2 = createTestDialogue()
+      await runner.start(dialogue2) // Start new dialogue
       const flags2 = runner.getConversationFlags()
       expect(Object.keys(flags2).length).toBe(0)
+      expect(flags2['temp']).toBeUndefined()
     })
 
     it('fires dialogueStart event', async () => {
@@ -195,6 +245,29 @@ describe('runner.start()', () => {
       const dialogue = createTestDialogue()
       await runner.start(dialogue)
       expect(onDialogueStart).toHaveBeenCalledWith(dialogue)
+    })
+
+    it('preserves game flags from previous dialogue', async () => {
+      const gameFlags = createMockFlagStore()
+      gameFlags.set('persistent', 'value1')
+      const runner = createDialogueRunner({ gameFlags })
+      const dialogue1: DialogueDefinition = {
+        id: 'test1',
+        startNode: 'start',
+        nodes: {
+          start: {
+            text: 'Start',
+            actions: [{ type: 'set', flag: 'persistent', value: 'value2' }],
+          },
+        },
+      }
+      await runner.start(dialogue1)
+      expect(gameFlags.get('persistent')).toBe('value2')
+
+      const dialogue2 = createTestDialogue()
+      await runner.start(dialogue2)
+      // Game flags should still be present
+      expect(gameFlags.get('persistent')).toBe('value2')
     })
   })
 
@@ -266,6 +339,39 @@ describe('runner.start()', () => {
       }
       const state = await runner.start(dialogue)
       expect(state.currentNode.text).toBe('Hello Hero!')
+    })
+
+    it('returns node speaker', async () => {
+      const speakers = { npc: { name: 'TestNPC' } }
+      const runner = createDialogueRunner({ speakers })
+      const dialogue: DialogueDefinition = {
+        id: 'test',
+        startNode: 'start',
+        nodes: {
+          start: {
+            text: 'Hello',
+            speaker: 'npc',
+          },
+        },
+      }
+      const state = await runner.start(dialogue)
+      expect(state.currentNode.speaker).toBeDefined()
+    })
+
+    it('returns node tags', async () => {
+      const runner = createDialogueRunner()
+      const dialogue: DialogueDefinition = {
+        id: 'test',
+        startNode: 'start',
+        nodes: {
+          start: {
+            text: 'Tagged node',
+            tags: ['important', 'intro'],
+          },
+        },
+      }
+      const state = await runner.start(dialogue)
+      expect(state.currentNode.tags).toEqual(['important', 'intro'])
     })
   })
 })
@@ -674,6 +780,65 @@ describe('runner.choose()', () => {
       await runner.choose(0)
       expect(runner.getCurrentNode()?.text).toBe('End')
     })
+
+    it('executes multiple actions in order', async () => {
+      const gameFlags = createMockFlagStore()
+      const executionOrder: string[] = []
+      const actionHandlers = {
+        action1: () => executionOrder.push('action1'),
+        action2: () => executionOrder.push('action2'),
+      }
+      const runner = createDialogueRunner({ gameFlags, actionHandlers })
+      const dialogue: DialogueDefinition = {
+        id: 'test',
+        startNode: 'start',
+        nodes: {
+          start: {
+            text: 'Start',
+            choices: [
+              {
+                text: 'Go',
+                next: 'end',
+                actions: [
+                  { type: 'set', flag: 'flag1', value: true },
+                  { type: 'callback', name: 'action1' },
+                  { type: 'set', flag: 'flag2', value: true },
+                  { type: 'callback', name: 'action2' },
+                ],
+              },
+            ],
+          },
+          end: { text: 'End' },
+        },
+      }
+      await runner.start(dialogue)
+      await runner.choose(0)
+      expect(gameFlags.get('flag1')).toBe(true)
+      expect(gameFlags.get('flag2')).toBe(true)
+      expect(executionOrder).toEqual(['action1', 'action2'])
+    })
+
+    it('interpolates new node text', async () => {
+      const gameFlags = createMockFlagStore()
+      gameFlags.set('score', 100)
+      const runner = createDialogueRunner({ gameFlags })
+      const dialogue: DialogueDefinition = {
+        id: 'test',
+        startNode: 'start',
+        nodes: {
+          start: {
+            text: 'Start',
+            choices: [{ text: 'Check', next: 'result' }],
+          },
+          result: {
+            text: 'Your score is {{score}}!',
+          },
+        },
+      }
+      await runner.start(dialogue)
+      const state = await runner.choose(0)
+      expect(state.currentNode.text).toBe('Your score is 100!')
+    })
   })
 
   describe('Validation', () => {
@@ -682,6 +847,13 @@ describe('runner.choose()', () => {
       const dialogue = createTestDialogue()
       await runner.start(dialogue)
       await expect(runner.choose(99)).rejects.toThrow(ValidationError)
+    })
+
+    it('throws ValidationError for negative index', async () => {
+      const runner = createDialogueRunner()
+      const dialogue = createTestDialogue()
+      await runner.start(dialogue)
+      await expect(runner.choose(-1)).rejects.toThrow(ValidationError)
     })
 
     it('throws ValidationError for unavailable choice', async () => {
@@ -740,6 +912,11 @@ describe('runner.choose()', () => {
         },
       }
       await runner.start(dialogue)
+      await expect(runner.choose(0)).rejects.toThrow(ValidationError)
+    })
+
+    it('throws ValidationError when no dialogue started', async () => {
+      const runner = createDialogueRunner()
       await expect(runner.choose(0)).rejects.toThrow(ValidationError)
     })
   })
