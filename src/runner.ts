@@ -196,13 +196,14 @@ async function executeAction(
 
 /**
  * Interpolate text with flag values
+ * Supports async interpolation functions per PLAN.md
  */
-function interpolateText(
+async function interpolateText(
   text: string,
   context: InterpolationContext,
   customInterpolation: Record<string, (ctx: InterpolationContext) => string | Promise<string>>,
   speaker?: Speaker
-): string {
+): Promise<string> {
   let result = text
 
   // Replace {{...}} patterns
@@ -211,10 +212,10 @@ function interpolateText(
     const key = match[1]!
     let value = ''
 
-    // Check custom interpolation first (only sync for now)
+    // Check custom interpolation first - support async functions
     if (customInterpolation[key]) {
-      const interpolated = customInterpolation[key]!(context)
-      value = typeof interpolated === 'string' ? interpolated : ''
+      const interpolated = await customInterpolation[key]!(context)
+      value = String(interpolated || '')
     }
     // Special case for speaker
     else if (key === 'speaker' && speaker) {
@@ -290,7 +291,7 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
   /**
    * Get the current node definition with interpolation
    */
-  function getInterpolatedNode(): NodeDefinition | null {
+  async function getInterpolatedNode(): Promise<NodeDefinition | null> {
     if (!currentDialogue || !currentNodeId) return null
 
     const node = currentDialogue.nodes[currentNodeId]
@@ -310,8 +311,8 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
       text = i18n.t(text, {})
     }
 
-    // Interpolate text
-    text = interpolateText(text, context, interpolation, speaker)
+    // Interpolate text (supports async per PLAN.md)
+    text = await interpolateText(text, context, interpolation, speaker)
 
     return { ...node, text }
   }
@@ -319,8 +320,8 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
   /**
    * Update current interpolated node
    */
-  function updateInterpolatedNode(): void {
-    currentInterpolatedNode = getInterpolatedNode()
+  async function updateInterpolatedNode(): Promise<void> {
+    currentInterpolatedNode = await getInterpolatedNode()
   }
 
   /**
@@ -353,7 +354,7 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
           }
         }
 
-        updateInterpolatedNode()
+        await updateInterpolatedNode()
 
         const speaker = nextNode.speaker ? speakers[nextNode.speaker] : undefined
         onNodeEnter?.(nextNode, speaker)
@@ -385,7 +386,7 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
         }
       }
 
-      updateInterpolatedNode()
+      await updateInterpolatedNode()
 
       const speaker = node.speaker ? speakers[node.speaker] : undefined
       onNodeEnter?.(node, speaker)
@@ -393,7 +394,7 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
       // Process auto-advance
       await processAutoAdvance()
 
-      updateInterpolatedNode()
+      await updateInterpolatedNode()
 
       const isEnded = runner.isEnded()
 
@@ -530,7 +531,7 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
         }
       }
 
-      updateInterpolatedNode()
+      await updateInterpolatedNode()
 
       const speaker = nextNode.speaker ? speakers[nextNode.speaker] : undefined
       onNodeEnter?.(nextNode, speaker)
@@ -538,7 +539,7 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
       // Process auto-advance
       await processAutoAdvance()
 
-      updateInterpolatedNode()
+      await updateInterpolatedNode()
 
       const isEnded = runner.isEnded()
 
@@ -582,7 +583,7 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
       return [...history]
     },
 
-    back: () => {
+    back: async () => {
       if (history.length === 0) return
 
       const lastEntry = history.pop()
@@ -590,7 +591,7 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
 
       currentNodeId = lastEntry.nodeId
 
-      updateInterpolatedNode()
+      await updateInterpolatedNode()
 
       // Restore conversation flags (simplified - would need full state restoration)
       const node = currentDialogue?.nodes[currentNodeId]
@@ -614,7 +615,7 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
       return runner.start(currentDialogue)
     },
 
-    jumpTo: (nodeId: string) => {
+    jumpTo: async (nodeId: string) => {
       if (!currentDialogue) {
         throw new ValidationError('No active dialogue')
       }
@@ -640,7 +641,7 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
 
       currentNodeId = nodeId
 
-      updateInterpolatedNode()
+      await updateInterpolatedNode()
 
       const speaker = node.speaker ? speakers[node.speaker] : undefined
       onNodeEnter?.(node, speaker)
@@ -659,7 +660,7 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
       }
     },
 
-    deserialize: (state: SerializedState) => {
+    deserialize: async (state: SerializedState) => {
       if (!currentDialogue) {
         throw new ValidationError('Start a dialogue before deserializing state')
       }
@@ -673,7 +674,7 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
         conversationFlags.set(key, value)
       }
 
-      updateInterpolatedNode()
+      await updateInterpolatedNode()
 
       const node = currentDialogue.nodes[currentNodeId]
       if (node) {
