@@ -1946,6 +1946,83 @@ describe('Validation', () => {
       expect(result.errors.length).toBeGreaterThan(0)
       expect(typeof result.errors[0]).toBe('string')
     })
+
+    it('rejects __proto__ as startNode', () => {
+      const dialogue: DialogueDefinition = {
+        id: 'test',
+        startNode: '__proto__',
+        nodes: {
+          __proto__: { text: 'Malicious' } as NodeDefinition,
+          safe: { text: 'Safe' },
+        },
+      }
+      const result = validateDialogue(dialogue)
+      expect(result.valid).toBe(false)
+      // __proto__ is filtered out so the startNode won't be found
+      expect(result.errors.length).toBeGreaterThan(0)
+    })
+
+    it('rejects constructor as startNode', () => {
+      const dialogue: DialogueDefinition = {
+        id: 'test',
+        startNode: 'constructor',
+        nodes: {
+          constructor: { text: 'Malicious' } as NodeDefinition,
+          safe: { text: 'Safe' },
+        },
+      }
+      const result = validateDialogue(dialogue)
+      expect(result.valid).toBe(false)
+      expect(result.errors.length).toBeGreaterThan(0)
+    })
+
+    it('rejects prototype as startNode', () => {
+      const dialogue: DialogueDefinition = {
+        id: 'test',
+        startNode: 'prototype',
+        nodes: {
+          prototype: { text: 'Malicious' } as NodeDefinition,
+          safe: { text: 'Safe' },
+        },
+      }
+      const result = validateDialogue(dialogue)
+      expect(result.valid).toBe(false)
+      expect(result.errors.length).toBeGreaterThan(0)
+    })
+
+    it('rejects __proto__ as next node', () => {
+      const dialogue: DialogueDefinition = {
+        id: 'test',
+        startNode: 'start',
+        nodes: {
+          start: {
+            text: 'Start',
+            next: '__proto__',
+          },
+          __proto__: { text: 'Malicious' } as NodeDefinition,
+        },
+      }
+      const result = validateDialogue(dialogue)
+      expect(result.valid).toBe(false)
+      expect(result.errors.some(e => e.includes('__proto__'))).toBe(true)
+    })
+
+    it('rejects __proto__ as choice target', () => {
+      const dialogue: DialogueDefinition = {
+        id: 'test',
+        startNode: 'start',
+        nodes: {
+          start: {
+            text: 'Start',
+            choices: [{ text: 'Go', next: '__proto__' }],
+          },
+          __proto__: { text: 'Malicious' } as NodeDefinition,
+        },
+      }
+      const result = validateDialogue(dialogue)
+      expect(result.valid).toBe(false)
+      expect(result.errors.some(e => e.includes('__proto__'))).toBe(true)
+    })
   })
 })
 

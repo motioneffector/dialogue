@@ -5,6 +5,21 @@
 import type { DialogueDefinition, ValidationResult } from './types'
 
 /**
+ * Set of forbidden keys that could lead to prototype pollution
+ */
+const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
+
+/**
+ * Safely get a property from an object, preventing prototype pollution
+ */
+function safeGet<T>(obj: Record<string, T>, key: string): T | undefined {
+  if (typeof key !== 'string') return undefined
+  if (FORBIDDEN_KEYS.has(key)) return undefined
+  if (!Object.hasOwn(obj, key)) return undefined
+  return obj[key]
+}
+
+/**
  * Validates a dialogue definition for structural integrity
  */
 export function validateDialogue(dialogue: DialogueDefinition): ValidationResult {
@@ -18,7 +33,7 @@ export function validateDialogue(dialogue: DialogueDefinition): ValidationResult
   }
 
   // Check if start node exists
-  if (!dialogue.nodes[dialogue.startNode]) {
+  if (!safeGet(dialogue.nodes, dialogue.startNode)) {
     errors.push(`Start node "${dialogue.startNode}" not found in nodes`)
   }
 
@@ -32,13 +47,13 @@ export function validateDialogue(dialogue: DialogueDefinition): ValidationResult
 
     reachable.add(nodeId)
 
-    const node = dialogue.nodes[nodeId]
+    const node = safeGet(dialogue.nodes, nodeId)
     if (!node) continue
 
     // Check choices target valid nodes
     if (node.choices) {
       for (const choice of node.choices) {
-        if (!dialogue.nodes[choice.next]) {
+        if (!safeGet(dialogue.nodes, choice.next)) {
           errors.push(`Choice in node "${nodeId}" targets non-existent node "${choice.next}"`)
         } else if (!reachable.has(choice.next)) {
           toVisit.push(choice.next)
@@ -47,7 +62,7 @@ export function validateDialogue(dialogue: DialogueDefinition): ValidationResult
     }
 
     // Check auto-advance target
-    if (node.next && !dialogue.nodes[node.next]) {
+    if (node.next && !safeGet(dialogue.nodes, node.next)) {
       errors.push(`Node "${nodeId}" auto-advances to non-existent node "${node.next}"`)
     } else if (node.next && !reachable.has(node.next)) {
       toVisit.push(node.next)
