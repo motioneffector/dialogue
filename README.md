@@ -34,25 +34,18 @@ const dialogue = {
     start: {
       text: 'Hello! How can I help you?',
       choices: [
-        { text: 'Tell me about yourself', next: 'about' },
+        { text: 'Tell me more', next: 'about' },
         { text: 'Goodbye', next: 'end' }
       ]
     },
-    about: {
-      text: 'I am a dialogue system built with TypeScript.',
-      next: 'start'
-    },
-    end: {
-      text: 'Farewell!',
-      isEnd: true
-    }
+    about: { text: 'I am a dialogue system.', next: 'start' },
+    end: { text: 'Farewell!', isEnd: true }
   }
 }
 
 const runner = createDialogueRunner()
 runner.start(dialogue)
-const choices = runner.getChoices()
-runner.choose(0)
+runner.choose(0) // Select first choice
 ```
 
 ## Testing & Validation
