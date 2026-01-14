@@ -23,6 +23,21 @@ import type {
 import { ValidationError } from './errors'
 
 /**
+ * Set of forbidden keys that could lead to prototype pollution
+ */
+const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
+
+/**
+ * Safely get a property from an object, preventing prototype pollution
+ */
+function safeGet<T>(obj: Record<string, T>, key: string): T | undefined {
+  if (typeof key !== 'string') return undefined
+  if (FORBIDDEN_KEYS.has(key)) return undefined
+  if (!Object.hasOwn(obj, key)) return undefined
+  return obj[key]
+}
+
+/**
  * Create an internal flag store for conversation flags
  */
 function createInternalFlagStore(): FlagStore {
@@ -172,7 +187,7 @@ async function executeAction(
         break
       }
       case 'callback': {
-        const handler = actionHandlers[action.name]
+        const handler = safeGet(actionHandlers, action.name)
         if (!handler) {
           throw new Error(`Action handler not registered: ${action.name}`)
         }
@@ -214,8 +229,9 @@ async function interpolateText(
     let value = ''
 
     // Check custom interpolation first - support async functions
-    if (customInterpolation[key]) {
-      const interpolated = await customInterpolation[key](context)
+    const interpolationFn = safeGet(customInterpolation, key)
+    if (interpolationFn) {
+      const interpolated = await interpolationFn(context)
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- interpolated can be any type from user functions
       value = String(interpolated || '')
     }
@@ -299,10 +315,10 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
   async function getInterpolatedNode(): Promise<NodeDefinition | null> {
     if (!currentDialogue || !currentNodeId) return null
 
-    const node = currentDialogue.nodes[currentNodeId]
+    const node = currentNodeId ? safeGet(currentDialogue.nodes, currentNodeId) : undefined
     if (!node) return null
 
-    const speaker = node.speaker ? speakers[node.speaker] : undefined
+    const speaker = node.speaker ? safeGet(speakers, node.speaker) : undefined
     const context: InterpolationContext = {
       currentNode: node,
       ...(speaker ? { speaker } : {}),
@@ -335,7 +351,7 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
   async function processAutoAdvance(): Promise<void> {
     if (!currentDialogue || !currentNodeId) return
 
-    const node = currentDialogue.nodes[currentNodeId]
+    const node = currentNodeId ? safeGet(currentDialogue.nodes, currentNodeId) : undefined
     if (!node) return
 
     // Auto-advance if node has 'next' but no choices
@@ -351,7 +367,7 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
 
       currentNodeId = node.next
 
-      const nextNode = currentDialogue.nodes[currentNodeId]
+      const nextNode = currentNodeId ? safeGet(currentDialogue.nodes, currentNodeId) : undefined
       if (nextNode) {
         // Execute node actions
         if (nextNode.actions) {
@@ -362,7 +378,7 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
 
         await updateInterpolatedNode()
 
-        const speaker = nextNode.speaker ? speakers[nextNode.speaker] : undefined
+        const speaker = nextNode.speaker ? safeGet(speakers, nextNode.speaker) : undefined
         onNodeEnter?.(nextNode, speaker)
 
         // Check for further auto-advance
@@ -380,7 +396,7 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
 
       onDialogueStart?.(dialogue)
 
-      const node = currentDialogue.nodes[currentNodeId]
+      const node = currentNodeId ? safeGet(currentDialogue.nodes, currentNodeId) : undefined
       if (!node) {
         throw new ValidationError(`Start node not found: ${dialogue.startNode}`)
       }
@@ -394,7 +410,7 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
 
       await updateInterpolatedNode()
 
-      const speaker = node.speaker ? speakers[node.speaker] : undefined
+      const speaker = node.speaker ? safeGet(speakers, node.speaker) : undefined
       onNodeEnter?.(node, speaker)
 
       // Process auto-advance
@@ -405,7 +421,7 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
       const isEnded = runner.isEnded()
 
       if (isEnded && currentNodeId) {
-        const endNode = currentDialogue.nodes[currentNodeId]
+        const endNode = currentNodeId ? safeGet(currentDialogue.nodes, currentNodeId) : undefined
         if (endNode) {
           onDialogueEnd?.(dialogue.id, endNode)
         }
@@ -425,7 +441,7 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
     getChoices: (options: GetChoicesOptions = {}) => {
       if (!currentDialogue || !currentNodeId) return []
 
-      const node = currentDialogue.nodes[currentNodeId]
+      const node = currentNodeId ? safeGet(currentDialogue.nodes, currentNodeId) : undefined
       if (!node?.choices) return []
 
       const { includeUnavailable = false, includeDisabled = false, filter } = options
@@ -483,7 +499,7 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
         throw new ValidationError('Dialogue has ended')
       }
 
-      const node = currentDialogue.nodes[currentNodeId]
+      const node = currentNodeId ? safeGet(currentDialogue.nodes, currentNodeId) : undefined
       if (!node?.choices) {
         throw new ValidationError('No choices available')
       }
@@ -535,7 +551,7 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
       // Move to next node
       currentNodeId = choice.next
 
-      const nextNode = currentDialogue.nodes[currentNodeId]
+      const nextNode = currentNodeId ? safeGet(currentDialogue.nodes, currentNodeId) : undefined
       if (!nextNode) {
         throw new ValidationError(`Target node not found: ${choice.next}`)
       }
@@ -560,7 +576,7 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
       const isEnded = runner.isEnded()
 
       if (isEnded && currentNodeId) {
-        const endNode = currentDialogue.nodes[currentNodeId]
+        const endNode = currentNodeId ? safeGet(currentDialogue.nodes, currentNodeId) : undefined
         if (endNode) {
           onDialogueEnd?.(currentDialogue.id, endNode)
         }
@@ -580,7 +596,7 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
     isEnded: () => {
       if (!currentDialogue || !currentNodeId) return false
 
-      const node = currentDialogue.nodes[currentNodeId]
+      const node = currentNodeId ? safeGet(currentDialogue.nodes, currentNodeId) : undefined
       if (!node) return false
 
       // Explicitly marked as end
@@ -622,7 +638,7 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
 
       const node = currentDialogue?.nodes[currentNodeId]
       if (node) {
-        const speaker = node.speaker ? speakers[node.speaker] : undefined
+        const speaker = node.speaker ? safeGet(speakers, node.speaker) : undefined
         onNodeEnter?.(node, speaker)
       }
     },
@@ -651,7 +667,7 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
         throw new ValidationError('No active dialogue')
       }
 
-      const node = currentDialogue.nodes[nodeId]
+      const node = safeGet(currentDialogue.nodes, nodeId)
       if (!node) {
         throw new ValidationError(`Node not found: ${nodeId}`)
       }
@@ -659,7 +675,7 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
       const previousNodeId = currentNodeId
 
       if (previousNodeId) {
-        const prevNode = currentDialogue.nodes[previousNodeId]
+        const prevNode = safeGet(currentDialogue.nodes, previousNodeId)
         if (prevNode) {
           onNodeExit?.(prevNode)
           history.push({
@@ -675,7 +691,7 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
 
       await updateInterpolatedNode()
 
-      const speaker = node.speaker ? speakers[node.speaker] : undefined
+      const speaker = node.speaker ? safeGet(speakers, node.speaker) : undefined
       onNodeEnter?.(node, speaker)
     },
 
@@ -708,9 +724,9 @@ export function createDialogueRunner(options: DialogueRunnerOptions = {}): Dialo
 
       await updateInterpolatedNode()
 
-      const node = currentDialogue.nodes[currentNodeId]
+      const node = currentNodeId ? safeGet(currentDialogue.nodes, currentNodeId) : undefined
       if (node) {
-        const speaker = node.speaker ? speakers[node.speaker] : undefined
+        const speaker = node.speaker ? safeGet(speakers, node.speaker) : undefined
         onNodeEnter?.(node, speaker)
       }
     },

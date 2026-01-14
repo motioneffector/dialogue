@@ -1038,3 +1038,203 @@ describe('runner.getCurrentNode()', () => {
     expect(node?.text).toBe('Hello Alice!')
   })
 })
+
+describe('Security: prototype pollution prevention', () => {
+  it('rejects __proto__ as node ID', async () => {
+    const runner = createDialogueRunner()
+    const maliciousDialogue: DialogueDefinition = {
+      id: 'malicious',
+      startNode: '__proto__',
+      nodes: {
+        __proto__: {
+          text: 'Malicious node',
+        } as NodeDefinition,
+      },
+    }
+
+    // Should fail to start because __proto__ is not a safe key
+    await expect(runner.start(maliciousDialogue)).rejects.toThrow(ValidationError)
+  })
+
+  it('rejects constructor as node ID', async () => {
+    const runner = createDialogueRunner()
+    const maliciousDialogue: DialogueDefinition = {
+      id: 'malicious',
+      startNode: 'constructor',
+      nodes: {
+        constructor: {
+          text: 'Malicious node',
+        } as NodeDefinition,
+      },
+    }
+
+    await expect(runner.start(maliciousDialogue)).rejects.toThrow(ValidationError)
+  })
+
+  it('rejects prototype as node ID', async () => {
+    const runner = createDialogueRunner()
+    const maliciousDialogue: DialogueDefinition = {
+      id: 'malicious',
+      startNode: 'prototype',
+      nodes: {
+        prototype: {
+          text: 'Malicious node',
+        } as NodeDefinition,
+      },
+    }
+
+    await expect(runner.start(maliciousDialogue)).rejects.toThrow(ValidationError)
+  })
+
+  it('rejects __proto__ as speaker name', async () => {
+    const speakers = {
+      __proto__: { name: 'Malicious' },
+    }
+    const runner = createDialogueRunner({ speakers })
+    const dialogue: DialogueDefinition = {
+      id: 'test',
+      startNode: 'start',
+      nodes: {
+        start: {
+          text: 'Hello',
+          speaker: '__proto__',
+        },
+      },
+    }
+
+    await runner.start(dialogue)
+    const node = runner.getCurrentNode()
+    // Should not be able to access __proto__ speaker
+    expect(node).toBeTruthy()
+  })
+
+  it('rejects __proto__ as action handler name', async () => {
+    let handlerCalled = false
+    const actionHandlers = {
+      __proto__: () => {
+        handlerCalled = true
+      },
+    }
+    const runner = createDialogueRunner({ actionHandlers })
+    const dialogue: DialogueDefinition = {
+      id: 'test',
+      startNode: 'start',
+      nodes: {
+        start: {
+          text: 'Test',
+          actions: [{ type: 'callback', name: '__proto__' }],
+        },
+      },
+    }
+
+    // Should complete but handler should not be called (error is logged, not thrown)
+    await runner.start(dialogue)
+    expect(handlerCalled).toBe(false)
+  })
+
+  it('rejects constructor as action handler name', async () => {
+    let handlerCalled = false
+    const actionHandlers = {
+      constructor: () => {
+        handlerCalled = true
+      },
+    }
+    const runner = createDialogueRunner({ actionHandlers })
+    const dialogue: DialogueDefinition = {
+      id: 'test',
+      startNode: 'start',
+      nodes: {
+        start: {
+          text: 'Test',
+          actions: [{ type: 'callback', name: 'constructor' }],
+        },
+      },
+    }
+
+    // Should complete but handler should not be called (error is logged, not thrown)
+    await runner.start(dialogue)
+    expect(handlerCalled).toBe(false)
+  })
+
+  it('rejects __proto__ as interpolation key', async () => {
+    let interpolationCalled = false
+    const interpolation = {
+      __proto__: () => {
+        interpolationCalled = true
+        return 'malicious'
+      },
+    }
+    const runner = createDialogueRunner({ interpolation })
+    const dialogue: DialogueDefinition = {
+      id: 'test',
+      startNode: 'start',
+      nodes: {
+        start: {
+          text: 'Hello {{__proto__}}',
+        },
+      },
+    }
+
+    await runner.start(dialogue)
+    const node = runner.getCurrentNode()
+    // Interpolation function should not be called
+    expect(interpolationCalled).toBe(false)
+    // Should render empty string instead of calling malicious function
+    expect(node?.text).toBe('Hello ')
+  })
+
+  it('does not pollute Object.prototype via node access', async () => {
+    const runner = createDialogueRunner()
+    const dialogue: DialogueDefinition = {
+      id: 'test',
+      startNode: 'start',
+      nodes: {
+        start: {
+          text: 'Safe node',
+          choices: [{ text: 'Go to __proto__', next: '__proto__' }],
+        },
+        __proto__: {
+          text: 'Malicious',
+        } as NodeDefinition,
+        safe: {
+          text: 'Safe fallback',
+        },
+      },
+    }
+
+    await runner.start(dialogue)
+    // __proto__ node should not be accessible
+    const choices = runner.getChoices()
+    expect(choices.length).toBeGreaterThan(0)
+
+    // Verify Object.prototype is not polluted
+    expect((Object.prototype as Record<string, unknown>).text).toBeUndefined()
+    expect(({}as Record<string, unknown>).text).toBeUndefined()
+  })
+
+  it('handles normal property names correctly', async () => {
+    const runner = createDialogueRunner({
+      speakers: { alice: { name: 'Alice' } },
+      actionHandlers: { greet: () => 'hello' },
+      interpolation: { custom: () => 'custom value' },
+    })
+
+    const dialogue: DialogueDefinition = {
+      id: 'test',
+      startNode: 'start',
+      nodes: {
+        start: {
+          text: 'Test {{custom}}',
+          speaker: 'alice',
+          actions: [{ type: 'callback', name: 'greet' }],
+        },
+      },
+    }
+
+    // Should work normally for safe property names
+    const state = await runner.start(dialogue)
+    expect(state).toBeTruthy()
+    const node = runner.getCurrentNode()
+    expect(node?.text).toBe('Test custom value')
+  })
+})
