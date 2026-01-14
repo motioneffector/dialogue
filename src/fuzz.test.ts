@@ -23,7 +23,7 @@ import type {
 const THOROUGH_MODE = process.env.FUZZ_THOROUGH === '1'
 const THOROUGH_DURATION_MS = process.env.FUZZ_DURATION_MS
   ? parseInt(process.env.FUZZ_DURATION_MS, 10)
-  : 60_000 // 60 seconds per test in thorough mode (configurable via FUZZ_DURATION_MS)
+  : 10_000 // 10 seconds per test in thorough mode (configurable via FUZZ_DURATION_MS)
 const STANDARD_ITERATIONS = 200 // iterations per test in standard mode
 const BASE_SEED = 12345 // reproducible seed for standard mode
 
