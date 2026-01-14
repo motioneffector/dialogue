@@ -41,15 +41,10 @@ export const testRunner = {
     progressFill.style.width = '0%'
     progressFill.className = 'test-progress-fill'
 
-    // Run visual demo of all exhibits first
-    if (runVisualDemo) {
-      progressText.textContent = 'Running visual demo of all exhibits...'
-      await runVisualDemo()
-    }
-
     let passed = 0
     let failed = 0
 
+    // Run all unit tests first
     for (let i = 0; i < this.tests.length; i++) {
       const test = this.tests[i]
       const progress = ((i + 1) / this.tests.length) * 100
@@ -92,6 +87,14 @@ export const testRunner = {
     failedCount.textContent = failed
     skippedCount.textContent = 0
     summary.classList.remove('hidden')
+
+    // Run visual demo of all exhibits after tests complete
+    if (runVisualDemo) {
+      await new Promise(r => setTimeout(r, 500))
+      progressText.textContent = 'Playing visual demo of all exhibits...'
+      await runVisualDemo()
+      progressText.textContent = `Complete: ${passed}/${this.tests.length} passed - Demo finished`
+    }
 
     runBtn.disabled = false
     this.running = false
