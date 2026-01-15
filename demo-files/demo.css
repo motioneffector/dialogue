@@ -1321,3 +1321,47 @@ textarea.input {
   gap: var(--space-xs);
   margin-top: var(--space-sm);
 }
+
+/* ============================================
+   INTEGRITY TEST STYLING
+   ============================================ */
+
+.test-name.integrity-test {
+  color: var(--accent-purple);
+  font-weight: 500;
+}
+
+.test-item[data-category="integrity"] .test-name {
+  color: var(--accent-purple);
+  font-weight: 500;
+}
+
+/* Demo walkthrough styling */
+.test-item.demo-phase .test-icon {
+  color: var(--accent-blue);
+}
+
+.test-item.demo-step .test-icon {
+  color: var(--text-secondary);
+}
+
+/* ============================================
+   CONTROL BAR LAYOUT
+   ============================================ */
+
+.test-control-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.test-progress {
+  flex: 1;  /* Progress bar fills available space */
+}
+
+.test-runner-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;  /* Buttons maintain their size */
+}

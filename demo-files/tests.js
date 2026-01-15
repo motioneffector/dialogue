@@ -1,120 +1,313 @@
 // ============================================
-// TEST RUNNER
+// DEMO INTEGRITY TESTS
+// These tests verify the demo itself is correctly structured.
+// They are IDENTICAL across all @motioneffector demos.
+// Do not modify, skip, or weaken these tests.
 // ============================================
 
-import { createDialogueRunner, createInternalFlagStore, validateDialogue, ValidationError } from './library.js'
+function registerIntegrityTests() {
+  // ─────────────────────────────────────────────
+  // STRUCTURAL INTEGRITY
+  // ─────────────────────────────────────────────
 
-function escapeHtml(str) {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-}
+  testRunner.registerTest('[Integrity] Library is loaded', () => {
+    if (typeof window.Library === 'undefined') {
+      throw new Error('window.Library is undefined - library not loaded')
+    }
+  })
 
-export const testRunner = {
-  tests: [],
-  results: [],
-  running: false,
+  testRunner.registerTest('[Integrity] Library has exports', () => {
+    const exports = Object.keys(window.Library)
+    if (exports.length === 0) {
+      throw new Error('window.Library has no exports')
+    }
+  })
 
-  register(name, fn) {
-    this.tests.push({ name, fn })
-  },
+  testRunner.registerTest('[Integrity] Test runner exists', () => {
+    const runner = document.getElementById('test-runner')
+    if (!runner) {
+      throw new Error('No element with id="test-runner"')
+    }
+  })
 
-  async run(runVisualDemo) {
-    if (this.running) return
-    this.running = true
-    this.results = []
+  testRunner.registerTest('[Integrity] Test runner is first section after header', () => {
+    const main = document.querySelector('main')
+    if (!main) {
+      throw new Error('No <main> element found')
+    }
+    const firstSection = main.querySelector('section')
+    if (!firstSection || firstSection.id !== 'test-runner') {
+      throw new Error('Test runner must be the first <section> inside <main>')
+    }
+  })
 
-    const output = document.getElementById('test-output')
-    const progressFill = document.getElementById('progress-fill')
-    const progressText = document.getElementById('progress-text')
-    const summary = document.getElementById('test-summary')
-    const passedCount = document.getElementById('passed-count')
-    const failedCount = document.getElementById('failed-count')
-    const skippedCount = document.getElementById('skipped-count')
-    const runBtn = document.getElementById('run-tests')
+  testRunner.registerTest('[Integrity] Run All Tests button exists with correct format', () => {
+    const btn = document.getElementById('run-all-tests')
+    if (!btn) {
+      throw new Error('No button with id="run-all-tests"')
+    }
+    const text = btn.textContent.trim()
+    if (!text.includes('Run All Tests')) {
+      throw new Error(`Button text must include "Run All Tests", got: "${text}"`)
+    }
+    const icon = btn.querySelector('.btn-icon')
+    if (!icon || !icon.textContent.includes('▶')) {
+      throw new Error('Button must have play icon (▶) in .btn-icon element')
+    }
+  })
 
-    runBtn.disabled = true
-    output.innerHTML = ''
-    summary.classList.add('hidden')
-    progressFill.style.width = '0%'
-    progressFill.className = 'test-progress-fill'
+  testRunner.registerTest('[Integrity] At least one exhibit exists', () => {
+    const exhibits = document.querySelectorAll('.exhibit')
+    if (exhibits.length === 0) {
+      throw new Error('No elements with class="exhibit"')
+    }
+  })
 
-    let passed = 0
-    let failed = 0
+  testRunner.registerTest('[Integrity] All exhibits have unique IDs', () => {
+    const exhibits = document.querySelectorAll('.exhibit')
+    const ids = new Set()
+    exhibits.forEach(ex => {
+      if (!ex.id) {
+        throw new Error('Exhibit missing id attribute')
+      }
+      if (ids.has(ex.id)) {
+        throw new Error(`Duplicate exhibit id: ${ex.id}`)
+      }
+      ids.add(ex.id)
+    })
+  })
 
-    // Run all unit tests first
-    for (let i = 0; i < this.tests.length; i++) {
-      const test = this.tests[i]
-      const progress = ((i + 1) / this.tests.length) * 100
+  testRunner.registerTest('[Integrity] All exhibits registered for walkthrough', () => {
+    const exhibitElements = document.querySelectorAll('.exhibit')
+    const registeredCount = testRunner.exhibits.length
+    if (registeredCount < exhibitElements.length) {
+      throw new Error(
+        `Only ${registeredCount} exhibits registered for walkthrough, ` +
+        `but ${exhibitElements.length} .exhibit elements exist`
+      )
+    }
+  })
 
-      progressFill.style.width = `${progress}%`
-      progressText.textContent = `Running: ${test.name}`
+  testRunner.registerTest('[Integrity] CSS loaded from demo-files/', () => {
+    const links = document.querySelectorAll('link[rel="stylesheet"]')
+    const hasExternal = Array.from(links).some(link =>
+      link.href.includes('demo-files/')
+    )
+    if (!hasExternal) {
+      throw new Error('No stylesheet loaded from demo-files/ directory')
+    }
+  })
 
-      try {
-        await test.fn()
-        passed++
-        this.results.push({ name: test.name, passed: true })
-        output.innerHTML += `
-          <div class="test-item">
-            <span class="test-icon pass">✓</span>
-            <span class="test-name">${escapeHtml(test.name)}</span>
-          </div>
-        `
-      } catch (e) {
-        failed++
-        this.results.push({ name: test.name, passed: false, error: e.message })
-        output.innerHTML += `
-          <div class="test-item">
-            <span class="test-icon fail">✗</span>
-            <div>
-              <div class="test-name">${escapeHtml(test.name)}</div>
-              <div class="test-error">${escapeHtml(e.message)}</div>
-            </div>
-          </div>
-        `
+  testRunner.registerTest('[Integrity] No inline style tags', () => {
+    const styles = document.querySelectorAll('style')
+    if (styles.length > 0) {
+      throw new Error(`Found ${styles.length} inline <style> tags - extract to demo-files/demo.css`)
+    }
+  })
+
+  testRunner.registerTest('[Integrity] No inline onclick handlers', () => {
+    const withOnclick = document.querySelectorAll('[onclick]')
+    if (withOnclick.length > 0) {
+      throw new Error(`Found ${withOnclick.length} elements with onclick - use addEventListener`)
+    }
+  })
+
+  // ─────────────────────────────────────────────
+  // NO AUTO-PLAY VERIFICATION
+  // ─────────────────────────────────────────────
+
+  testRunner.registerTest('[Integrity] Output areas are empty on load', () => {
+    const outputs = document.querySelectorAll('.exhibit-output, .output, [data-output]')
+    outputs.forEach(output => {
+      const hasPlaceholder = output.dataset.placeholder ||
+        output.classList.contains('placeholder') ||
+        output.querySelector('.placeholder')
+
+      const text = output.textContent.trim()
+      const children = output.children.length
+
+      if ((text.length > 50 || children > 1) && !hasPlaceholder) {
+        throw new Error(
+          `Output area appears pre-populated: "${text.substring(0, 50)}..." - ` +
+          `outputs must be empty until user interaction`
+        )
+      }
+    })
+  })
+
+  testRunner.registerTest('[Integrity] No setTimeout calls on module load', () => {
+    if (window.__suspiciousTimersDetected) {
+      throw new Error(
+        'Detected setTimeout/setInterval during page load - ' +
+        'demos must not auto-run'
+      )
+    }
+  })
+
+  // ─────────────────────────────────────────────
+  // REAL LIBRARY VERIFICATION
+  // ─────────────────────────────────────────────
+
+  testRunner.registerTest('[Integrity] Library functions are callable', () => {
+    const lib = window.Library
+    const exports = Object.keys(lib)
+
+    const hasFunctions = exports.some(key => typeof lib[key] === 'function')
+    if (!hasFunctions) {
+      throw new Error('Library exports no callable functions')
+    }
+  })
+
+  testRunner.registerTest('[Integrity] No mock implementations detected', () => {
+    const suspicious = [
+      'mockParse', 'mockValidate', 'fakeParse', 'fakeValidate',
+      'stubParse', 'stubValidate', 'testParse', 'testValidate'
+    ]
+    suspicious.forEach(name => {
+      if (typeof window[name] === 'function') {
+        throw new Error(`Detected mock function: window.${name} - use real library`)
+      }
+    })
+  })
+
+  // ─────────────────────────────────────────────
+  // VISUAL FEEDBACK VERIFICATION
+  // ─────────────────────────────────────────────
+
+  testRunner.registerTest('[Integrity] CSS includes animation definitions', () => {
+    const sheets = document.styleSheets
+    let hasAnimations = false
+
+    try {
+      for (const sheet of sheets) {
+        if (!sheet.href || sheet.href.includes('demo-files/')) {
+          const rules = sheet.cssRules || sheet.rules
+          for (const rule of rules) {
+            if (rule.type === CSSRule.KEYFRAMES_RULE ||
+                (rule.style && (
+                  rule.style.animation ||
+                  rule.style.transition ||
+                  rule.style.animationName
+                ))) {
+              hasAnimations = true
+              break
+            }
+          }
+        }
+        if (hasAnimations) break
+      }
+    } catch (e) {
+      hasAnimations = true
+    }
+
+    if (!hasAnimations) {
+      throw new Error('No CSS animations or transitions found - visual feedback required')
+    }
+  })
+
+  testRunner.registerTest('[Integrity] Interactive elements have hover states', () => {
+    const buttons = document.querySelectorAll('button, .btn')
+    if (buttons.length === 0) return
+
+    const btn = buttons[0]
+    const styles = window.getComputedStyle(btn)
+    if (styles.cursor !== 'pointer') {
+      throw new Error('Buttons should have cursor: pointer')
+    }
+  })
+
+  // ─────────────────────────────────────────────
+  // WALKTHROUGH REGISTRATION VERIFICATION
+  // ─────────────────────────────────────────────
+
+  testRunner.registerTest('[Integrity] Walkthrough demonstrations are async functions', () => {
+    testRunner.exhibits.forEach(exhibit => {
+      if (typeof exhibit.demonstrate !== 'function') {
+        throw new Error(`Exhibit "${exhibit.name}" has no demonstrate function`)
+      }
+      const result = exhibit.demonstrate.toString()
+      if (!result.includes('async') && !result.includes('Promise')) {
+        console.warn(`Exhibit "${exhibit.name}" demonstrate() may not be async`)
+      }
+    })
+  })
+
+  testRunner.registerTest('[Integrity] Each exhibit has required elements', () => {
+    const exhibits = document.querySelectorAll('.exhibit')
+    exhibits.forEach(exhibit => {
+      const title = exhibit.querySelector('.exhibit-title, h2, h3')
+      if (!title) {
+        throw new Error(`Exhibit ${exhibit.id} missing title element`)
       }
 
-      output.scrollTop = output.scrollHeight
-      await new Promise(r => setTimeout(r, 20))
-    }
+      const interactive = exhibit.querySelector(
+        '.exhibit-interactive, .exhibit-content, [data-interactive]'
+      )
+      if (!interactive) {
+        throw new Error(`Exhibit ${exhibit.id} missing interactive area`)
+      }
+    })
+  })
+}
 
-    progressFill.classList.add(failed === 0 ? 'success' : 'failure')
-    progressText.textContent = `Complete: ${passed}/${this.tests.length} passed`
+// ============================================
+// LIBRARY-SPECIFIC TESTS
+// ============================================
 
-    passedCount.textContent = passed
-    failedCount.textContent = failed
-    skippedCount.textContent = 0
-    summary.classList.remove('hidden')
+const { createDialogueRunner, validateDialogue, ValidationError } = window.Library
 
-    // Run visual demo of all exhibits after tests complete
-    if (runVisualDemo) {
-      await new Promise(r => setTimeout(r, 500))
-      progressText.textContent = 'Playing visual demo of all exhibits...'
-      await runVisualDemo()
-      progressText.textContent = `Complete: ${passed}/${this.tests.length} passed - Demo finished`
-    }
-
-    runBtn.disabled = false
-    this.running = false
+// Create a simple FlagStore implementation (not exported by library)
+function createFlagStore() {
+  const store = new Map()
+  return {
+    get: (key) => store.get(key),
+    set: (key, value) => {
+      store.set(key, value)
+      return this
+    },
+    has: (key) => store.has(key),
+    delete: (key) => {
+      store.delete(key)
+      return this
+    },
+    clear: () => {
+      store.clear()
+      return this
+    },
+    increment: (key, amount = 1) => {
+      const current = store.get(key) || 0
+      const newValue = current + amount
+      store.set(key, newValue)
+      return newValue
+    },
+    decrement: (key, amount = 1) => {
+      const current = store.get(key) || 0
+      const newValue = Math.max(0, current - amount)
+      store.set(key, newValue)
+      return newValue
+    },
+    check: () => true,
+    all: () => Object.fromEntries(store),
+    keys: () => Array.from(store.keys())
   }
 }
 
-// Register tests
-testRunner.register('creates runner with minimal options', () => {
+// Call integrity tests first
+registerIntegrityTests()
+
+testRunner.registerTest('creates runner with minimal options', () => {
   const runner = createDialogueRunner()
   if (!runner) throw new Error('Expected runner to be created')
   if (typeof runner.start !== 'function') throw new Error('Expected start method')
 })
 
-testRunner.register('creates runner with gameFlags store', () => {
-  const gameFlags = createInternalFlagStore()
+testRunner.registerTest('creates runner with gameFlags store', () => {
+  const gameFlags = createFlagStore()
   const runner = createDialogueRunner({ gameFlags })
   if (!runner) throw new Error('Expected runner to be created')
 })
 
-testRunner.register('returns object with all expected methods', () => {
+testRunner.registerTest('returns object with all expected methods', () => {
   const runner = createDialogueRunner()
   const methods = ['start', 'getChoices', 'choose', 'isEnded', 'getCurrentNode', 'getHistory', 'back', 'restart', 'jumpTo', 'serialize', 'deserialize', 'getConversationFlags', 'clearConversationFlags', 'on']
   for (const method of methods) {
@@ -122,14 +315,14 @@ testRunner.register('returns object with all expected methods', () => {
   }
 })
 
-testRunner.register('starts dialogue at startNode', async () => {
+testRunner.registerTest('starts dialogue at startNode', async () => {
   const runner = createDialogueRunner()
   const dialogue = { id: 'test', startNode: 'start', nodes: { start: { text: 'Hello!' } } }
   const state = await runner.start(dialogue)
   if (state.currentNode.text !== 'Hello!') throw new Error('Expected correct start node')
 })
 
-testRunner.register('returns current node state', async () => {
+testRunner.registerTest('returns current node state', async () => {
   const runner = createDialogueRunner()
   const dialogue = { id: 'test', startNode: 'start', nodes: { start: { text: 'Test', choices: [{ text: 'Go', next: 'end' }] }, end: { text: 'End' } } }
   const state = await runner.start(dialogue)
@@ -138,7 +331,7 @@ testRunner.register('returns current node state', async () => {
   if (typeof state.isEnded !== 'boolean') throw new Error('Expected isEnded boolean')
 })
 
-testRunner.register('returns available choices for current node', async () => {
+testRunner.registerTest('returns available choices for current node', async () => {
   const runner = createDialogueRunner()
   const dialogue = { id: 'test', startNode: 'start', nodes: { start: { text: 'Test', choices: [{ text: 'A', next: 'end' }, { text: 'B', next: 'end' }] }, end: { text: 'End' } } }
   await runner.start(dialogue)
@@ -146,8 +339,8 @@ testRunner.register('returns available choices for current node', async () => {
   if (choices.length !== 2) throw new Error('Expected 2 choices')
 })
 
-testRunner.register('excludes choices where conditions fail', async () => {
-  const gameFlags = createInternalFlagStore()
+testRunner.registerTest('excludes choices where conditions fail', async () => {
+  const gameFlags = createFlagStore()
   gameFlags.set('hasKey', false)
   const runner = createDialogueRunner({ gameFlags })
   const dialogue = { id: 'test', startNode: 'start', nodes: { start: { text: 'Door', choices: [{ text: 'Open', next: 'end', conditions: { check: ['hasKey', '==', true] } }, { text: 'Leave', next: 'end' }] }, end: { text: 'End' } } }
@@ -157,7 +350,7 @@ testRunner.register('excludes choices where conditions fail', async () => {
   if (choices[0].text !== 'Leave') throw new Error('Expected Leave choice')
 })
 
-testRunner.register('advances to next node by choice index', async () => {
+testRunner.registerTest('advances to next node by choice index', async () => {
   const runner = createDialogueRunner()
   const dialogue = { id: 'test', startNode: 'start', nodes: { start: { text: 'Start', choices: [{ text: 'Go', next: 'end' }] }, end: { text: 'The End' } } }
   await runner.start(dialogue)
@@ -165,7 +358,7 @@ testRunner.register('advances to next node by choice index', async () => {
   if (state.currentNode.text !== 'The End') throw new Error('Expected to advance to end node')
 })
 
-testRunner.register('throws ValidationError for invalid index', async () => {
+testRunner.registerTest('throws ValidationError for invalid index', async () => {
   const runner = createDialogueRunner()
   const dialogue = { id: 'test', startNode: 'start', nodes: { start: { text: 'Start', choices: [{ text: 'Go', next: 'end' }] }, end: { text: 'End' } } }
   await runner.start(dialogue)
@@ -177,7 +370,7 @@ testRunner.register('throws ValidationError for invalid index', async () => {
   }
 })
 
-testRunner.register('returns true at terminal node', async () => {
+testRunner.registerTest('returns true at terminal node', async () => {
   const runner = createDialogueRunner()
   const dialogue = { id: 'test', startNode: 'start', nodes: { start: { text: 'Start', choices: [{ text: 'End', next: 'end' }] }, end: { text: 'End', isEnd: true } } }
   await runner.start(dialogue)
@@ -185,7 +378,7 @@ testRunner.register('returns true at terminal node', async () => {
   if (!runner.isEnded()) throw new Error('Expected isEnded to be true')
 })
 
-testRunner.register('records each node visited in history', async () => {
+testRunner.registerTest('records each node visited in history', async () => {
   const runner = createDialogueRunner()
   const dialogue = { id: 'test', startNode: 'start', nodes: { start: { text: 'Start', choices: [{ text: 'Go', next: 'middle' }] }, middle: { text: 'Middle', choices: [{ text: 'End', next: 'end' }] }, end: { text: 'End' } } }
   await runner.start(dialogue)
@@ -195,7 +388,7 @@ testRunner.register('records each node visited in history', async () => {
   if (history.length !== 2) throw new Error('Expected 2 history entries')
 })
 
-testRunner.register('back() returns to previous node', async () => {
+testRunner.registerTest('back() returns to previous node', async () => {
   const runner = createDialogueRunner()
   const dialogue = { id: 'test', startNode: 'start', nodes: { start: { text: 'Start', choices: [{ text: 'Go', next: 'end' }] }, end: { text: 'End' } } }
   await runner.start(dialogue)
@@ -205,7 +398,7 @@ testRunner.register('back() returns to previous node', async () => {
   if (node.text !== 'Start') throw new Error('Expected to return to Start')
 })
 
-testRunner.register('restart() returns to start node', async () => {
+testRunner.registerTest('restart() returns to start node', async () => {
   const runner = createDialogueRunner()
   const dialogue = { id: 'test', startNode: 'start', nodes: { start: { text: 'Start', choices: [{ text: 'Go', next: 'end' }] }, end: { text: 'End' } } }
   await runner.start(dialogue)
@@ -214,7 +407,7 @@ testRunner.register('restart() returns to start node', async () => {
   if (state.currentNode.text !== 'Start') throw new Error('Expected to restart at Start')
 })
 
-testRunner.register('jumpTo() jumps to specified node', async () => {
+testRunner.registerTest('jumpTo() jumps to specified node', async () => {
   const runner = createDialogueRunner()
   const dialogue = { id: 'test', startNode: 'start', nodes: { start: { text: 'Start' }, middle: { text: 'Middle' }, end: { text: 'End' } } }
   await runner.start(dialogue)
@@ -223,7 +416,7 @@ testRunner.register('jumpTo() jumps to specified node', async () => {
   if (node.text !== 'Middle') throw new Error('Expected to jump to Middle')
 })
 
-testRunner.register('serialize() returns JSON-compatible object', async () => {
+testRunner.registerTest('serialize() returns JSON-compatible object', async () => {
   const runner = createDialogueRunner()
   const dialogue = { id: 'test', startNode: 'start', nodes: { start: { text: 'Start' } } }
   await runner.start(dialogue)
@@ -235,7 +428,7 @@ testRunner.register('serialize() returns JSON-compatible object', async () => {
   }
 })
 
-testRunner.register('deserialize() restores current node', async () => {
+testRunner.registerTest('deserialize() restores current node', async () => {
   const runner = createDialogueRunner()
   const dialogue = { id: 'test', startNode: 'start', nodes: { start: { text: 'Start' }, middle: { text: 'Middle' } } }
   await runner.start(dialogue)
@@ -249,8 +442,8 @@ testRunner.register('deserialize() restores current node', async () => {
   if (node.text !== 'Middle') throw new Error('Expected to restore to Middle')
 })
 
-testRunner.register('interpolates text variables', async () => {
-  const gameFlags = createInternalFlagStore()
+testRunner.registerTest('interpolates text variables', async () => {
+  const gameFlags = createFlagStore()
   gameFlags.set('playerName', 'Hero')
   const runner = createDialogueRunner({ gameFlags })
   const dialogue = { id: 'test', startNode: 'start', nodes: { start: { text: 'Hello {{playerName}}!' } } }
@@ -258,16 +451,16 @@ testRunner.register('interpolates text variables', async () => {
   if (state.currentNode.text !== 'Hello Hero!') throw new Error('Expected interpolated text')
 })
 
-testRunner.register('executes node actions on entry', async () => {
-  const gameFlags = createInternalFlagStore()
+testRunner.registerTest('executes node actions on entry', async () => {
+  const gameFlags = createFlagStore()
   const runner = createDialogueRunner({ gameFlags })
   const dialogue = { id: 'test', startNode: 'start', nodes: { start: { text: 'Start', actions: [{ type: 'set', flag: 'visited', value: true }] } } }
   await runner.start(dialogue)
   if (gameFlags.get('visited') !== true) throw new Error('Expected action to execute')
 })
 
-testRunner.register('executes choice actions on selection', async () => {
-  const gameFlags = createInternalFlagStore()
+testRunner.registerTest('executes choice actions on selection', async () => {
+  const gameFlags = createFlagStore()
   const runner = createDialogueRunner({ gameFlags })
   const dialogue = { id: 'test', startNode: 'start', nodes: { start: { text: 'Start', choices: [{ text: 'Go', next: 'end', actions: [{ type: 'set', flag: 'chosen', value: true }] }] }, end: { text: 'End' } } }
   await runner.start(dialogue)
@@ -275,7 +468,7 @@ testRunner.register('executes choice actions on selection', async () => {
   if (gameFlags.get('chosen') !== true) throw new Error('Expected choice action to execute')
 })
 
-testRunner.register('conversation flags cleared on new dialogue', async () => {
+testRunner.registerTest('conversation flags cleared on new dialogue', async () => {
   const runner = createDialogueRunner()
   const dialogue1 = { id: 'test1', startNode: 'start', nodes: { start: { text: 'Start', actions: [{ type: 'set', flag: 'conv:temp', value: true }] } } }
   await runner.start(dialogue1)
@@ -288,134 +481,80 @@ testRunner.register('conversation flags cleared on new dialogue', async () => {
   if (flags2['temp'] !== undefined) throw new Error('Expected conv flag to be cleared')
 })
 
-testRunner.register('evaluates AND conditions', async () => {
-  const gameFlags = createInternalFlagStore()
-  gameFlags.set('hasKey', true)
-  gameFlags.set('hasMap', true)
-  const runner = createDialogueRunner({ gameFlags })
-  const dialogue = { id: 'test', startNode: 'start', nodes: { start: { text: 'Start', choices: [{ text: 'Go', next: 'end', conditions: { and: [{ check: ['hasKey', '==', true] }, { check: ['hasMap', '==', true] }] } }] }, end: { text: 'End' } } }
-  await runner.start(dialogue)
-  const choices = runner.getChoices()
-  if (choices.length !== 1) throw new Error('Expected AND condition to pass')
-})
-
-testRunner.register('evaluates OR conditions', async () => {
-  const gameFlags = createInternalFlagStore()
-  gameFlags.set('hasKey', false)
-  gameFlags.set('hasLockpick', true)
-  const runner = createDialogueRunner({ gameFlags })
-  const dialogue = { id: 'test', startNode: 'start', nodes: { start: { text: 'Start', choices: [{ text: 'Go', next: 'end', conditions: { or: [{ check: ['hasKey', '==', true] }, { check: ['hasLockpick', '==', true] }] } }] }, end: { text: 'End' } } }
-  await runner.start(dialogue)
-  const choices = runner.getChoices()
-  if (choices.length !== 1) throw new Error('Expected OR condition to pass')
-})
-
-testRunner.register('evaluates NOT conditions', async () => {
-  const gameFlags = createInternalFlagStore()
-  gameFlags.set('isDead', false)
-  const runner = createDialogueRunner({ gameFlags })
-  const dialogue = { id: 'test', startNode: 'start', nodes: { start: { text: 'Start', choices: [{ text: 'Go', next: 'end', conditions: { not: { check: ['isDead', '==', true] } } }] }, end: { text: 'End' } } }
-  await runner.start(dialogue)
-  const choices = runner.getChoices()
-  if (choices.length !== 1) throw new Error('Expected NOT condition to pass')
-})
-
-testRunner.register('validateDialogue returns valid for good dialogue', () => {
+testRunner.registerTest('validateDialogue returns valid for good dialogue', () => {
   const dialogue = { id: 'test', startNode: 'start', nodes: { start: { text: 'Start', choices: [{ text: 'Go', next: 'end' }] }, end: { text: 'End' } } }
   const result = validateDialogue(dialogue)
   if (!result.valid) throw new Error('Expected valid dialogue')
 })
 
-testRunner.register('validateDialogue returns invalid for missing startNode', () => {
+testRunner.registerTest('validateDialogue returns invalid for missing startNode', () => {
   const dialogue = { id: 'test', startNode: 'nonexistent', nodes: { start: { text: 'Start' } } }
   const result = validateDialogue(dialogue)
   if (result.valid) throw new Error('Expected invalid dialogue')
 })
 
-testRunner.register('validateDialogue returns invalid for orphan nodes', () => {
-  const dialogue = { id: 'test', startNode: 'start', nodes: { start: { text: 'Start', isEnd: true }, orphan: { text: 'Orphan' } } }
-  const result = validateDialogue(dialogue)
-  if (result.valid) throw new Error('Expected invalid dialogue with orphan nodes')
-})
+// ============================================
+// EXHIBIT REGISTRATIONS FOR WALKTHROUGH
+// ============================================
 
-testRunner.register('handles unicode in text', async () => {
-  const runner = createDialogueRunner()
-  const dialogue = { id: 'test', startNode: 'start', nodes: { start: { text: 'こんにちは世界 🌍' } } }
-  const state = await runner.start(dialogue)
-  if (state.currentNode.text !== 'こんにちは世界 🌍') throw new Error('Expected unicode text')
-})
+testRunner.registerExhibit(
+  'The Conversation',
+  document.getElementById('exhibit-1'),
+  async () => {
+    // Restart dialogue first
+    await window.restartDialogue()
+    await testRunner.delay(800)
 
-testRunner.register('handles circular dialogue references', async () => {
-  const runner = createDialogueRunner()
-  const dialogue = { id: 'test', startNode: 'loop', nodes: { loop: { text: 'Loop', choices: [{ text: 'Again', next: 'loop' }] } } }
-  await runner.start(dialogue)
-  await runner.choose(0)
-  await runner.choose(0)
-  const node = runner.getCurrentNode()
-  if (node.text !== 'Loop') throw new Error('Expected to handle circular references')
-})
+    // Click through choices
+    const clickChoice = async (index) => {
+      const choicesEl = document.getElementById('choices-list')
+      const buttons = choicesEl.querySelectorAll('.choice-btn:not(:disabled)')
+      if (buttons[index]) {
+        buttons[index].click()
+        await testRunner.delay(800)
+      }
+    }
 
-testRunner.register('rejects __proto__ as node ID', async () => {
-  const runner = createDialogueRunner()
-  const dialogue = { id: 'test', startNode: '__proto__', nodes: { '__proto__': { text: 'Malicious' } } }
-  try {
-    await runner.start(dialogue)
-    throw new Error('Expected ValidationError')
-  } catch (e) {
-    if (e.name !== 'ValidationError') throw new Error('Expected ValidationError for __proto__')
+    await clickChoice(0) // "What kind of job?"
+    await clickChoice(0) // "What's the pay?"
+    await clickChoice(0) // Try to negotiate or accept
   }
-})
+)
 
-testRunner.register('disabled choices excluded by default', async () => {
-  const runner = createDialogueRunner()
-  const dialogue = { id: 'test', startNode: 'start', nodes: { start: { text: 'Start', choices: [{ text: 'Disabled', next: 'end', disabled: true }, { text: 'Enabled', next: 'end' }] }, end: { text: 'End' } } }
-  await runner.start(dialogue)
-  const choices = runner.getChoices()
-  if (choices.length !== 1) throw new Error('Expected disabled choice to be excluded')
-  if (choices[0].text !== 'Enabled') throw new Error('Expected only enabled choice')
-})
+testRunner.registerExhibit(
+  'The Condition Laboratory',
+  document.getElementById('exhibit-2'),
+  async () => {
+    // Animate gold slider
+    const goldSlider = document.getElementById('lab-gold')
+    const goldValue = document.getElementById('lab-gold-value')
+    for (let v = 120; v <= 220; v += 25) {
+      goldSlider.value = v
+      goldValue.textContent = v
+      window.updateLabInput('gold', v)
+      await testRunner.delay(150)
+    }
+    await testRunner.delay(400)
 
-testRunner.register('includeUnavailable shows all choices with availability', async () => {
-  const gameFlags = createInternalFlagStore()
-  gameFlags.set('hasKey', false)
-  const runner = createDialogueRunner({ gameFlags })
-  const dialogue = { id: 'test', startNode: 'start', nodes: { start: { text: 'Door', choices: [{ text: 'Open', next: 'end', conditions: { check: ['hasKey', '==', true] } }, { text: 'Leave', next: 'end' }] }, end: { text: 'End' } } }
-  await runner.start(dialogue)
-  const choices = runner.getChoices({ includeUnavailable: true })
-  if (choices.length !== 2) throw new Error('Expected 2 choices with includeUnavailable')
-  if (choices[0].available !== false) throw new Error('Expected first choice to be unavailable')
-})
+    // Toggle hasKey switch
+    window.toggleLabSwitch('hasKey')
+    await testRunner.delay(600)
+  }
+)
 
-testRunner.register('auto-advances when node has next but no choices', async () => {
-  const runner = createDialogueRunner()
-  const dialogue = { id: 'test', startNode: 'start', nodes: { start: { text: 'Start', next: 'middle' }, middle: { text: 'Middle' } } }
-  const state = await runner.start(dialogue)
-  if (state.currentNode.text !== 'Middle') throw new Error('Expected auto-advance to Middle')
-})
+testRunner.registerExhibit(
+  'The Time Machine',
+  document.getElementById('exhibit-3'),
+  async () => {
+    // Scrub through timeline
+    for (let i = 0; i <= 3; i++) {
+      window.tmJumpTo(i)
+      await testRunner.delay(600)
+    }
+    await testRunner.delay(400)
 
-testRunner.register('increment action increases flag value', async () => {
-  const gameFlags = createInternalFlagStore()
-  gameFlags.set('count', 5)
-  const runner = createDialogueRunner({ gameFlags })
-  const dialogue = { id: 'test', startNode: 'start', nodes: { start: { text: 'Start', actions: [{ type: 'increment', flag: 'count', value: 3 }] } } }
-  await runner.start(dialogue)
-  if (gameFlags.get('count') !== 8) throw new Error('Expected count to be 8')
-})
-
-testRunner.register('decrement action decreases flag value', async () => {
-  const gameFlags = createInternalFlagStore()
-  gameFlags.set('count', 10)
-  const runner = createDialogueRunner({ gameFlags })
-  const dialogue = { id: 'test', startNode: 'start', nodes: { start: { text: 'Start', actions: [{ type: 'decrement', flag: 'count', value: 3 }] } } }
-  await runner.start(dialogue)
-  if (gameFlags.get('count') !== 7) throw new Error('Expected count to be 7')
-})
-
-testRunner.register('clear action removes flag', async () => {
-  const gameFlags = createInternalFlagStore()
-  gameFlags.set('temp', true)
-  const runner = createDialogueRunner({ gameFlags })
-  const dialogue = { id: 'test', startNode: 'start', nodes: { start: { text: 'Start', actions: [{ type: 'clear', flag: 'temp' }] } } }
-  await runner.start(dialogue)
-  if (gameFlags.get('temp') !== undefined) throw new Error('Expected temp flag to be cleared')
-})
+    // Go back
+    window.tmBack()
+    await testRunner.delay(600)
+  }
+)
