@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Types Reference - @motioneffector/dialogue</title>
+  <link rel="stylesheet" href="../demo-files/demo.css">
+  <link rel="stylesheet" href="manual.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <h1 class="header-title">@motioneffector/dialogue</h1>
+      <p class="header-description">Documentation</p>
+      <nav class="header-links">
+        <a href="../index.html" class="header-link">Demo</a>
+        <a href="https://www.npmjs.com/package/@motioneffector/dialogue" class="header-link">npm</a>
+        <a href="https://github.com/motioneffector/dialogue" class="header-link">GitHub</a>
+      </nav>
+    </header>
+
+    <div class="manual-layout">
+      <aside class="manual-sidebar">
+        <nav class="sidebar-nav">
+<p><strong><a href="index.html">@motioneffector/dialogue</a></strong></p>
+<p><strong>Getting Started</strong></p>
+<ul>
+<li><a href="installation.html">Installation</a></li>
+<li><a href="your-first-dialogue.html">Your First Dialogue</a></li>
+</ul>
+<p><strong>Core Concepts</strong></p>
+<ul>
+<li><a href="concept-dialogue-trees.html">Dialogue Trees</a></li>
+<li><a href="concept-dialoguerunner.html">The DialogueRunner</a></li>
+<li><a href="concept-flags.html">Flags</a></li>
+<li><a href="concept-conditions.html">Conditions</a></li>
+<li><a href="concept-actions.html">Actions</a></li>
+</ul>
+<p><strong>Guides</strong></p>
+<ul>
+<li><a href="guide-conditional-choices.html">Conditional Choices</a></li>
+<li><a href="guide-working-with-flags.html">Working with Flags</a></li>
+<li><a href="guide-dynamic-text.html">Dynamic Text</a></li>
+<li><a href="guide-configuring-speakers.html">Configuring Speakers</a></li>
+<li><a href="guide-navigating-history.html">Navigating History</a></li>
+<li><a href="guide-saving-and-restoring-state.html">Saving and Restoring State</a></li>
+<li><a href="guide-responding-to-events.html">Responding to Events</a></li>
+<li><a href="guide-validating-dialogues.html">Validating Dialogues</a></li>
+<li><a href="guide-internationalization.html">Internationalization</a></li>
+</ul>
+<p><strong>API Reference</strong></p>
+<ul>
+<li><a href="api-dialoguerunner.html">DialogueRunner API</a></li>
+<li><a href="api-navigation.html">Navigation API</a></li>
+<li><a href="api-state.html">State API</a></li>
+<li><a href="api-types.html">Types Reference</a></li>
+<li><a href="api-validation.html">Validation API</a></li>
+<li><a href="api-i18n.html">I18n API</a></li>
+<li><a href="api-errors.html">Errors</a></li>
+</ul>
+
+        </nav>
+      </aside>
+
+      <main class="manual-content">
+        <article class="manual-article">
+<h1>Types Reference</h1>
+<p>All TypeScript types and interfaces exported by the library.</p>
+<hr>
+<h2>Dialogue Structure</h2>
+<h3><code>DialogueDefinition</code></h3>
+<p>Complete definition of a dialogue tree.</p>
+<pre><code class="language-typescript">interface DialogueDefinition {
+  id: string
+  startNode: string
+  metadata?: Record&lt;string, unknown&gt;
+  nodes: Record&lt;string, NodeDefinition&gt;
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>id</code></td>
+<td><code>string</code></td>
+<td>Yes</td>
+<td>Unique identifier for the dialogue</td>
+</tr>
+<tr>
+<td><code>startNode</code></td>
+<td><code>string</code></td>
+<td>Yes</td>
+<td>ID of the first node</td>
+</tr>
+<tr>
+<td><code>metadata</code></td>
+<td><code>Record&lt;string, unknown&gt;</code></td>
+<td>No</td>
+<td>Custom metadata for the dialogue</td>
+</tr>
+<tr>
+<td><code>nodes</code></td>
+<td><code>Record&lt;string, NodeDefinition&gt;</code></td>
+<td>Yes</td>
+<td>Map of node IDs to definitions</td>
+</tr>
+</tbody></table>
+<h3><code>NodeDefinition</code></h3>
+<p>Definition of a single dialogue node.</p>
+<pre><code class="language-typescript">interface NodeDefinition {
+  text: string
+  speaker?: string
+  tags?: string[]
+  actions?: Action[]
+  choices?: ChoiceDefinition[]
+  next?: string
+  isEnd?: boolean
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>text</code></td>
+<td><code>string</code></td>
+<td>Yes</td>
+<td>Text to display (or i18n key)</td>
+</tr>
+<tr>
+<td><code>speaker</code></td>
+<td><code>string</code></td>
+<td>No</td>
+<td>Speaker ID for this node</td>
+</tr>
+<tr>
+<td><code>tags</code></td>
+<td><code>string[]</code></td>
+<td>No</td>
+<td>Custom tags for filtering/routing</td>
+</tr>
+<tr>
+<td><code>actions</code></td>
+<td><code>Action[]</code></td>
+<td>No</td>
+<td>Actions to execute on entry</td>
+</tr>
+<tr>
+<td><code>choices</code></td>
+<td><code>ChoiceDefinition[]</code></td>
+<td>No</td>
+<td>Available choices</td>
+</tr>
+<tr>
+<td><code>next</code></td>
+<td><code>string</code></td>
+<td>No</td>
+<td>Next node for auto-advance</td>
+</tr>
+<tr>
+<td><code>isEnd</code></td>
+<td><code>boolean</code></td>
+<td>No</td>
+<td>Marks node as dialogue endpoint</td>
+</tr>
+</tbody></table>
+<h3><code>ChoiceDefinition</code></h3>
+<p>Definition of a player choice.</p>
+<pre><code class="language-typescript">interface ChoiceDefinition {
+  text: string
+  next: string
+  conditions?: Condition
+  actions?: Action[]
+  tags?: string[]
+  disabled?: boolean
+  disabledText?: string
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>text</code></td>
+<td><code>string</code></td>
+<td>Yes</td>
+<td>Display text for the choice</td>
+</tr>
+<tr>
+<td><code>next</code></td>
+<td><code>string</code></td>
+<td>Yes</td>
+<td>Target node ID</td>
+</tr>
+<tr>
+<td><code>conditions</code></td>
+<td><code>Condition</code></td>
+<td>No</td>
+<td>Conditions for availability</td>
+</tr>
+<tr>
+<td><code>actions</code></td>
+<td><code>Action[]</code></td>
+<td>No</td>
+<td>Actions to execute on selection</td>
+</tr>
+<tr>
+<td><code>tags</code></td>
+<td><code>string[]</code></td>
+<td>No</td>
+<td>Custom tags</td>
+</tr>
+<tr>
+<td><code>disabled</code></td>
+<td><code>boolean</code></td>
+<td>No</td>
+<td>Force-disable this choice</td>
+</tr>
+<tr>
+<td><code>disabledText</code></td>
+<td><code>string</code></td>
+<td>No</td>
+<td>Text shown when disabled</td>
+</tr>
+</tbody></table>
+<h3><code>ChoiceWithAvailability</code></h3>
+<p>Choice with availability information (returned by <code>getChoices({ includeUnavailable: true })</code>).</p>
+<pre><code class="language-typescript">interface ChoiceWithAvailability extends ChoiceDefinition {
+  available: boolean
+  reason?: string
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>available</code></td>
+<td><code>boolean</code></td>
+<td>Whether the choice is currently available</td>
+</tr>
+<tr>
+<td><code>reason</code></td>
+<td><code>string</code></td>
+<td>Reason for unavailability (if applicable)</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>Conditions</h2>
+<h3><code>Condition</code></h3>
+<p>Boolean expression for conditional logic.</p>
+<pre><code class="language-typescript">type Condition =
+  | { check: [string, string, FlagValue] }
+  | { and: Condition[] }
+  | { or: Condition[] }
+  | { not: Condition }
+</code></pre>
+<p><strong>Check format:</strong> <code>{ check: [flagName, operator, value] }</code></p>
+<p><strong>Operators:</strong> <code>==</code>, <code>!=</code>, <code>&gt;</code>, <code>&lt;</code>, <code>&gt;=</code>, <code>&lt;=</code></p>
+<p><strong>Examples:</strong></p>
+<pre><code class="language-typescript">// Simple equality
+{ check: [&#39;hasKey&#39;, &#39;==&#39;, true] }
+
+// Numeric comparison
+{ check: [&#39;gold&#39;, &#39;&gt;=&#39;, 100] }
+
+// AND combination
+{ and: [
+  { check: [&#39;hasKey&#39;, &#39;==&#39;, true] },
+  { check: [&#39;gold&#39;, &#39;&gt;=&#39;, 50] }
+]}
+
+// OR combination
+{ or: [
+  { check: [&#39;hasKey&#39;, &#39;==&#39;, true] },
+  { check: [&#39;hasLockpick&#39;, &#39;==&#39;, true] }
+]}
+
+// NOT inversion
+{ not: { check: [&#39;isPoisoned&#39;, &#39;==&#39;, true] } }
+</code></pre>
+<hr>
+<h2>Actions</h2>
+<h3><code>Action</code></h3>
+<p>Command to execute during dialogue.</p>
+<pre><code class="language-typescript">type Action =
+  | { type: &#39;set&#39;; flag: string; value: FlagValue }
+  | { type: &#39;clear&#39;; flag: string }
+  | { type: &#39;increment&#39;; flag: string; value?: number }
+  | { type: &#39;decrement&#39;; flag: string; value?: number }
+  | { type: &#39;callback&#39;; name: string; args?: unknown[] }
+</code></pre>
+<p><strong>Action Types:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Properties</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>set</code></td>
+<td><code>flag</code>, <code>value</code></td>
+<td>Set flag to value</td>
+</tr>
+<tr>
+<td><code>clear</code></td>
+<td><code>flag</code></td>
+<td>Remove flag</td>
+</tr>
+<tr>
+<td><code>increment</code></td>
+<td><code>flag</code>, <code>value?</code></td>
+<td>Add to numeric flag (default: 1)</td>
+</tr>
+<tr>
+<td><code>decrement</code></td>
+<td><code>flag</code>, <code>value?</code></td>
+<td>Subtract from numeric flag (default: 1)</td>
+</tr>
+<tr>
+<td><code>callback</code></td>
+<td><code>name</code>, <code>args?</code></td>
+<td>Call registered action handler</td>
+</tr>
+</tbody></table>
+<h3><code>ActionHandler</code></h3>
+<p>Function signature for callback action handlers.</p>
+<pre><code class="language-typescript">type ActionHandler = (args?: unknown[]) =&gt; unknown | Promise&lt;unknown&gt;
+</code></pre>
+<hr>
+<h2>Speakers</h2>
+<h3><code>Speaker</code></h3>
+<p>Character metadata for dialogue speakers.</p>
+<pre><code class="language-typescript">interface Speaker {
+  name: string
+  portrait?: string | null
+  color?: string
+  [key: string]: unknown
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>name</code></td>
+<td><code>string</code></td>
+<td>Yes</td>
+<td>Display name</td>
+</tr>
+<tr>
+<td><code>portrait</code></td>
+<td><code>string | null</code></td>
+<td>No</td>
+<td>Portrait image path</td>
+</tr>
+<tr>
+<td><code>color</code></td>
+<td><code>string</code></td>
+<td>No</td>
+<td>Color for UI styling</td>
+</tr>
+<tr>
+<td><code>[key]</code></td>
+<td><code>unknown</code></td>
+<td>No</td>
+<td>Custom properties</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>Flags</h2>
+<h3><code>FlagValue</code></h3>
+<p>Supported types for flag values.</p>
+<pre><code class="language-typescript">type FlagValue = boolean | number | string
+</code></pre>
+<h3><code>FlagStore</code></h3>
+<p>Interface for flag storage (from @motioneffector/flags).</p>
+<pre><code class="language-typescript">interface FlagStore {
+  get(key: string): FlagValue | undefined
+  set(key: string, value: FlagValue): FlagStore
+  has(key: string): boolean
+  delete(key: string): FlagStore
+  clear(): FlagStore
+  increment(key: string, amount?: number): number
+  decrement(key: string, amount?: number): number
+  check(condition: string): boolean
+  all(): Record&lt;string, FlagValue&gt;
+  keys(): string[]
+}
+</code></pre>
+<hr>
+<h2>Internationalization</h2>
+<h3><code>I18nAdapter</code></h3>
+<p>Interface for internationalization adapters.</p>
+<pre><code class="language-typescript">interface I18nAdapter {
+  t: (key: string, params?: Record&lt;string, unknown&gt;) =&gt; string
+  hasKey: (key: string) =&gt; boolean
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>t(key, params?)</code></td>
+<td>Translate a key, optionally with parameters</td>
+</tr>
+<tr>
+<td><code>hasKey(key)</code></td>
+<td>Check if a translation key exists</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>Interpolation</h2>
+<h3><code>InterpolationFunction</code></h3>
+<p>Custom text interpolation function.</p>
+<pre><code class="language-typescript">type InterpolationFunction = (context: InterpolationContext) =&gt; string | Promise&lt;string&gt;
+</code></pre>
+<h3><code>InterpolationContext</code></h3>
+<p>Context provided to interpolation functions.</p>
+<pre><code class="language-typescript">interface InterpolationContext {
+  currentNode: NodeDefinition
+  speaker?: Speaker
+  gameFlags: FlagStore
+  conversationFlags: FlagStore
+}
+</code></pre>
+<hr>
+<h2>State</h2>
+<h3><code>DialogueState</code></h3>
+<p>Current state returned by <code>start()</code> and <code>choose()</code>.</p>
+<pre><code class="language-typescript">interface DialogueState {
+  currentNode: NodeDefinition
+  availableChoices: ChoiceDefinition[]
+  isEnded: boolean
+}
+</code></pre>
+<h3><code>HistoryEntry</code></h3>
+<p>Record of a visited node.</p>
+<pre><code class="language-typescript">interface HistoryEntry {
+  nodeId: string
+  node: NodeDefinition
+  choiceIndex?: number
+  choice?: ChoiceDefinition
+  timestamp: number
+  conversationFlags: Record&lt;string, FlagValue&gt;
+}
+</code></pre>
+<h3><code>SerializedState</code></h3>
+<p>JSON-compatible dialogue state for save/load.</p>
+<pre><code class="language-typescript">interface SerializedState {
+  dialogueId: string
+  currentNodeId: string
+  history: HistoryEntry[]
+  conversationFlags: Record&lt;string, FlagValue&gt;
+}
+</code></pre>
+<hr>
+<h2>Options</h2>
+<h3><code>DialogueRunnerOptions</code></h3>
+<p>Configuration for <code>createDialogueRunner()</code>.</p>
+<pre><code class="language-typescript">interface DialogueRunnerOptions {
+  gameFlags?: FlagStore
+  actionHandlers?: Record&lt;string, ActionHandler&gt;
+  speakers?: Record&lt;string, Speaker&gt;
+  i18n?: I18nAdapter
+  interpolation?: Record&lt;string, InterpolationFunction&gt;
+  onNodeEnter?: (node: NodeDefinition, speaker?: Speaker) =&gt; void
+  onNodeExit?: (node: NodeDefinition) =&gt; void
+  onChoiceSelected?: (choice: ChoiceDefinition, index: number) =&gt; void
+  onDialogueStart?: (dialogue: DialogueDefinition) =&gt; void
+  onDialogueEnd?: (dialogueId: string, endNode?: NodeDefinition) =&gt; void
+  onActionExecuted?: (action: Action, result?: unknown) =&gt; void
+  onConditionEvaluated?: (condition: Condition, result: boolean) =&gt; void
+}
+</code></pre>
+<h3><code>GetChoicesOptions</code></h3>
+<p>Options for <code>runner.getChoices()</code>.</p>
+<pre><code class="language-typescript">interface GetChoicesOptions {
+  includeUnavailable?: boolean
+  includeDisabled?: boolean
+  filter?: (choice: ChoiceDefinition) =&gt; boolean
+}
+</code></pre>
+<h3><code>RestartOptions</code></h3>
+<p>Options for <code>runner.restart()</code>.</p>
+<pre><code class="language-typescript">interface RestartOptions {
+  preserveConversationFlags?: boolean
+}
+</code></pre>
+<hr>
+<h2>Validation</h2>
+<h3><code>ValidationResult</code></h3>
+<p>Result from <code>validateDialogue()</code>.</p>
+<pre><code class="language-typescript">interface ValidationResult {
+  valid: boolean
+  errors: string[]
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>valid</code></td>
+<td><code>boolean</code></td>
+<td>True if dialogue passed validation</td>
+</tr>
+<tr>
+<td><code>errors</code></td>
+<td><code>string[]</code></td>
+<td>Array of error messages</td>
+</tr>
+</tbody></table>
+
+        </article>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

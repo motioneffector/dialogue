@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saving and Restoring State - @motioneffector/dialogue</title>
+  <link rel="stylesheet" href="../demo-files/demo.css">
+  <link rel="stylesheet" href="manual.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <h1 class="header-title">@motioneffector/dialogue</h1>
+      <p class="header-description">Documentation</p>
+      <nav class="header-links">
+        <a href="../index.html" class="header-link">Demo</a>
+        <a href="https://www.npmjs.com/package/@motioneffector/dialogue" class="header-link">npm</a>
+        <a href="https://github.com/motioneffector/dialogue" class="header-link">GitHub</a>
+      </nav>
+    </header>
+
+    <div class="manual-layout">
+      <aside class="manual-sidebar">
+        <nav class="sidebar-nav">
+<p><strong><a href="index.html">@motioneffector/dialogue</a></strong></p>
+<p><strong>Getting Started</strong></p>
+<ul>
+<li><a href="installation.html">Installation</a></li>
+<li><a href="your-first-dialogue.html">Your First Dialogue</a></li>
+</ul>
+<p><strong>Core Concepts</strong></p>
+<ul>
+<li><a href="concept-dialogue-trees.html">Dialogue Trees</a></li>
+<li><a href="concept-dialoguerunner.html">The DialogueRunner</a></li>
+<li><a href="concept-flags.html">Flags</a></li>
+<li><a href="concept-conditions.html">Conditions</a></li>
+<li><a href="concept-actions.html">Actions</a></li>
+</ul>
+<p><strong>Guides</strong></p>
+<ul>
+<li><a href="guide-conditional-choices.html">Conditional Choices</a></li>
+<li><a href="guide-working-with-flags.html">Working with Flags</a></li>
+<li><a href="guide-dynamic-text.html">Dynamic Text</a></li>
+<li><a href="guide-configuring-speakers.html">Configuring Speakers</a></li>
+<li><a href="guide-navigating-history.html">Navigating History</a></li>
+<li><a href="guide-saving-and-restoring-state.html">Saving and Restoring State</a></li>
+<li><a href="guide-responding-to-events.html">Responding to Events</a></li>
+<li><a href="guide-validating-dialogues.html">Validating Dialogues</a></li>
+<li><a href="guide-internationalization.html">Internationalization</a></li>
+</ul>
+<p><strong>API Reference</strong></p>
+<ul>
+<li><a href="api-dialoguerunner.html">DialogueRunner API</a></li>
+<li><a href="api-navigation.html">Navigation API</a></li>
+<li><a href="api-state.html">State API</a></li>
+<li><a href="api-types.html">Types Reference</a></li>
+<li><a href="api-validation.html">Validation API</a></li>
+<li><a href="api-i18n.html">I18n API</a></li>
+<li><a href="api-errors.html">Errors</a></li>
+</ul>
+
+        </nav>
+      </aside>
+
+      <main class="manual-content">
+        <article class="manual-article">
+<h1>Saving and Restoring State</h1>
+<p>Persist dialogue progress for save/load functionality. Serialize the current position, history, and conversation flags, then restore them later.</p>
+<h2>Prerequisites</h2>
+<p>Before starting, you should:</p>
+<ul>
+<li><a href="your-first-dialogue.html">Complete Your First Dialogue</a></li>
+<li><a href="concept-flags.html">Understand Flags</a></li>
+</ul>
+<h2>Overview</h2>
+<p>We&#39;ll implement save/load for dialogue state so players can resume conversations.</p>
+<ol>
+<li>Serialize current state</li>
+<li>Store the serialized data</li>
+<li>Restore state in a new session</li>
+<li>Handle game flags separately</li>
+</ol>
+<h2>Step 1: Serialize State</h2>
+<p>Call <code>serialize()</code> to get a JSON-compatible object representing the current dialogue state:</p>
+<pre><code class="language-typescript">import { createDialogueRunner, DialogueDefinition } from &#39;@motioneffector/dialogue&#39;
+
+const dialogue: DialogueDefinition = {
+  id: &#39;quest-dialogue&#39;,
+  startNode: &#39;start&#39;,
+  nodes: {
+    start: {
+      text: &#39;Will you help me?&#39;,
+      choices: [
+        { text: &#39;Yes&#39;, next: &#39;accepted&#39; },
+        { text: &#39;Tell me more&#39;, next: &#39;details&#39; }
+      ]
+    },
+    details: {
+      text: &#39;Bandits stole my supplies.&#39;,
+      actions: [{ type: &#39;set&#39;, flag: &#39;conv:heardDetails&#39;, value: true }],
+      next: &#39;start&#39;
+    },
+    accepted: {
+      text: &#39;Thank you! Here is the map.&#39;,
+      isEnd: true
+    }
+  }
+}
+
+const runner = createDialogueRunner()
+await runner.start(dialogue)
+await runner.choose(1)  // &quot;Tell me more&quot;
+
+// Serialize current state
+const savedState = runner.serialize()
+
+console.log(savedState)
+// {
+//   dialogueId: &#39;quest-dialogue&#39;,
+//   currentNodeId: &#39;start&#39;,
+//   history: [...],
+//   conversationFlags: { heardDetails: true }
+// }
+</code></pre>
+<h2>Step 2: Store the Data</h2>
+<p>The serialized state is plain JSON. Store it however suits your game:</p>
+<pre><code class="language-typescript">// Browser localStorage
+function saveToLocalStorage() {
+  const state = runner.serialize()
+  localStorage.setItem(&#39;dialogue_save&#39;, JSON.stringify(state))
+}
+
+// Or send to server
+async function saveToServer() {
+  const state = runner.serialize()
+  await fetch(&#39;/api/save&#39;, {
+    method: &#39;POST&#39;,
+    body: JSON.stringify({ dialogueState: state })
+  })
+}
+</code></pre>
+<h2>Step 3: Restore State</h2>
+<p>Start the same dialogue, then call <code>deserialize()</code> with the saved state:</p>
+<pre><code class="language-typescript">// Load from storage
+const savedJson = localStorage.getItem(&#39;dialogue_save&#39;)
+
+if (savedJson) {
+  const savedState = JSON.parse(savedJson)
+
+  // Start the dialogue first
+  const runner = createDialogueRunner()
+  await runner.start(dialogue)  // Must start the same dialogue
+
+  // Then restore the saved state
+  await runner.deserialize(savedState)
+
+  console.log(runner.getCurrentNode()?.text)  // Restored position
+  console.log(runner.getConversationFlags())  // Restored flags
+  console.log(runner.getHistory())            // Restored history
+}
+</code></pre>
+<h2>Step 4: Handle Game Flags Separately</h2>
+<p>Serialized state does NOT include game flags. Those are persistent state that you manage separately:</p>
+<pre><code class="language-typescript">import { createFlagStore } from &#39;@motioneffector/flags&#39;
+
+// Your game&#39;s persistent state
+const gameFlags = createFlagStore()
+
+// Save everything
+function saveGame() {
+  const save = {
+    gameFlags: gameFlags.all(),
+    dialogueState: runner.serialize()
+  }
+  localStorage.setItem(&#39;game_save&#39;, JSON.stringify(save))
+}
+
+// Load everything
+function loadGame() {
+  const saveJson = localStorage.getItem(&#39;game_save&#39;)
+  if (!saveJson) return false
+
+  const save = JSON.parse(saveJson)
+
+  // Restore game flags
+  for (const [key, value] of Object.entries(save.gameFlags)) {
+    gameFlags.set(key, value as any)
+  }
+
+  // Restore dialogue if one was active
+  if (save.dialogueState) {
+    const runner = createDialogueRunner({ gameFlags })
+    // Note: You need to have the dialogue definition available
+    await runner.start(getDialogueById(save.dialogueState.dialogueId))
+    await runner.deserialize(save.dialogueState)
+  }
+
+  return true
+}
+</code></pre>
+<h2>Complete Example</h2>
+<pre><code class="language-typescript">import { createDialogueRunner, DialogueDefinition, SerializedState } from &#39;@motioneffector/dialogue&#39;
+import { createFlagStore } from &#39;@motioneffector/flags&#39;
+
+// Dialogue registry
+const dialogues: Record&lt;string, DialogueDefinition&gt; = {
+  &#39;merchant-quest&#39;: {
+    id: &#39;merchant-quest&#39;,
+    startNode: &#39;offer&#39;,
+    nodes: {
+      offer: {
+        text: &#39;I need someone to deliver this package.&#39;,
+        choices: [
+          { text: &#39;Where to?&#39;, next: &#39;details&#39; },
+          { text: &#39;How much?&#39;, next: &#39;payment&#39; },
+          { text: &#39;I accept&#39;, next: &#39;accepted&#39; }
+        ]
+      },
+      details: {
+        text: &#39;The castle in the north.&#39;,
+        actions: [{ type: &#39;set&#39;, flag: &#39;conv:knows_destination&#39;, value: true }],
+        next: &#39;offer&#39;
+      },
+      payment: {
+        text: &#39;50 gold on delivery.&#39;,
+        actions: [{ type: &#39;set&#39;, flag: &#39;conv:knows_payment&#39;, value: true }],
+        next: &#39;offer&#39;
+      },
+      accepted: {
+        text: &#39;Excellent! Here is the package.&#39;,
+        actions: [
+          { type: &#39;set&#39;, flag: &#39;hasPackage&#39;, value: true },
+          { type: &#39;set&#39;, flag: &#39;quest_delivery&#39;, value: &#39;active&#39; }
+        ],
+        isEnd: true
+      }
+    }
+  }
+}
+
+// Game state
+const gameFlags = createFlagStore()
+gameFlags.set(&#39;gold&#39;, 100)
+gameFlags.set(&#39;playerName&#39;, &#39;Hero&#39;)
+
+let runner = createDialogueRunner({ gameFlags })
+let activeDialogueId: string | null = null
+
+// Save system
+interface SaveData {
+  gameFlags: Record&lt;string, any&gt;
+  dialogue: SerializedState | null
+}
+
+function save(): string {
+  const data: SaveData = {
+    gameFlags: gameFlags.all(),
+    dialogue: activeDialogueId ? runner.serialize() : null
+  }
+  return JSON.stringify(data)
+}
+
+async function load(saveJson: string): Promise&lt;void&gt; {
+  const data: SaveData = JSON.parse(saveJson)
+
+  // Restore game flags
+  gameFlags.clear()
+  for (const [key, value] of Object.entries(data.gameFlags)) {
+    gameFlags.set(key, value)
+  }
+
+  // Restore dialogue if active
+  if (data.dialogue) {
+    const dialogue = dialogues[data.dialogue.dialogueId]
+    if (dialogue) {
+      runner = createDialogueRunner({ gameFlags })
+      await runner.start(dialogue)
+      await runner.deserialize(data.dialogue)
+      activeDialogueId = data.dialogue.dialogueId
+    }
+  }
+}
+
+// Demo
+async function demo() {
+  // Start a dialogue
+  await runner.start(dialogues[&#39;merchant-quest&#39;])
+  activeDialogueId = &#39;merchant-quest&#39;
+
+  // Make some choices
+  await runner.choose(0)  // &quot;Where to?&quot;
+  await runner.choose(1)  // &quot;How much?&quot;
+
+  console.log(&#39;Before save:&#39;)
+  console.log(&#39;Position:&#39;, runner.getCurrentNode()?.text)
+  console.log(&#39;Conv flags:&#39;, runner.getConversationFlags())
+  console.log(&#39;History:&#39;, runner.getHistory().length, &#39;entries&#39;)
+
+  // Save
+  const saveData = save()
+  console.log(&#39;\nSaved!&#39;)
+
+  // Simulate game restart
+  runner = createDialogueRunner({ gameFlags })
+  activeDialogueId = null
+
+  // Load
+  await load(saveData)
+
+  console.log(&#39;\nAfter load:&#39;)
+  console.log(&#39;Position:&#39;, runner.getCurrentNode()?.text)
+  console.log(&#39;Conv flags:&#39;, runner.getConversationFlags())
+  console.log(&#39;History:&#39;, runner.getHistory().length, &#39;entries&#39;)
+
+  // Continue playing
+  await runner.choose(2)  // &quot;I accept&quot;
+  console.log(&#39;\nQuest accepted:&#39;, gameFlags.get(&#39;quest_delivery&#39;))
+}
+
+demo()
+</code></pre>
+<h2>Variations</h2>
+<h3>Saving Mid-Node</h3>
+<p>Serialization captures the current node. If the dialogue is at an end node, restoring will put you at that end node.</p>
+<h3>Multiple Active Dialogues</h3>
+<p>If your game has multiple simultaneous dialogues, serialize each runner separately:</p>
+<pre><code class="language-typescript">const saves = {
+  mainQuest: mainQuestRunner.serialize(),
+  sideQuest: sideQuestRunner.serialize()
+}
+</code></pre>
+<h3>Validation on Load</h3>
+<p>Check that the dialogue still exists and the save is compatible:</p>
+<pre><code class="language-typescript">async function loadSafely(saveJson: string): Promise&lt;boolean&gt; {
+  try {
+    const data = JSON.parse(saveJson)
+
+    if (data.dialogue) {
+      const dialogue = dialogues[data.dialogue.dialogueId]
+      if (!dialogue) {
+        console.error(&#39;Dialogue no longer exists:&#39;, data.dialogue.dialogueId)
+        return false
+      }
+
+      // Verify the node still exists
+      if (!dialogue.nodes[data.dialogue.currentNodeId]) {
+        console.error(&#39;Node no longer exists:&#39;, data.dialogue.currentNodeId)
+        return false
+      }
+    }
+
+    await load(saveJson)
+    return true
+  } catch (e) {
+    console.error(&#39;Failed to load save:&#39;, e)
+    return false
+  }
+}
+</code></pre>
+<h2>Troubleshooting</h2>
+<h3>&quot;Start a dialogue before deserializing&quot;</h3>
+<p><strong>Symptom:</strong> <code>deserialize()</code> throws an error.</p>
+<p><strong>Cause:</strong> You called <code>deserialize()</code> before <code>start()</code>.</p>
+<p><strong>Solution:</strong> Always call <code>start(dialogue)</code> first, then <code>deserialize(state)</code>.</p>
+<h3>Wrong Dialogue Restored</h3>
+<p><strong>Symptom:</strong> State doesn&#39;t match expected.</p>
+<p><strong>Cause:</strong> Started a different dialogue than the one that was serialized.</p>
+<p><strong>Solution:</strong> Use <code>dialogueId</code> from the saved state to find the correct dialogue definition.</p>
+<h2>See Also</h2>
+<ul>
+<li><strong><a href="guide-navigating-history.html">Navigating History</a></strong> - What&#39;s captured in history</li>
+<li><strong><a href="api-state.html">State API</a></strong> - serialize/deserialize reference</li>
+<li><strong><a href="api-types.html">Types Reference</a></strong> - SerializedState interface</li>
+</ul>
+
+        </article>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

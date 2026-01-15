@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>State API - @motioneffector/dialogue</title>
+  <link rel="stylesheet" href="../demo-files/demo.css">
+  <link rel="stylesheet" href="manual.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <h1 class="header-title">@motioneffector/dialogue</h1>
+      <p class="header-description">Documentation</p>
+      <nav class="header-links">
+        <a href="../index.html" class="header-link">Demo</a>
+        <a href="https://www.npmjs.com/package/@motioneffector/dialogue" class="header-link">npm</a>
+        <a href="https://github.com/motioneffector/dialogue" class="header-link">GitHub</a>
+      </nav>
+    </header>
+
+    <div class="manual-layout">
+      <aside class="manual-sidebar">
+        <nav class="sidebar-nav">
+<p><strong><a href="index.html">@motioneffector/dialogue</a></strong></p>
+<p><strong>Getting Started</strong></p>
+<ul>
+<li><a href="installation.html">Installation</a></li>
+<li><a href="your-first-dialogue.html">Your First Dialogue</a></li>
+</ul>
+<p><strong>Core Concepts</strong></p>
+<ul>
+<li><a href="concept-dialogue-trees.html">Dialogue Trees</a></li>
+<li><a href="concept-dialoguerunner.html">The DialogueRunner</a></li>
+<li><a href="concept-flags.html">Flags</a></li>
+<li><a href="concept-conditions.html">Conditions</a></li>
+<li><a href="concept-actions.html">Actions</a></li>
+</ul>
+<p><strong>Guides</strong></p>
+<ul>
+<li><a href="guide-conditional-choices.html">Conditional Choices</a></li>
+<li><a href="guide-working-with-flags.html">Working with Flags</a></li>
+<li><a href="guide-dynamic-text.html">Dynamic Text</a></li>
+<li><a href="guide-configuring-speakers.html">Configuring Speakers</a></li>
+<li><a href="guide-navigating-history.html">Navigating History</a></li>
+<li><a href="guide-saving-and-restoring-state.html">Saving and Restoring State</a></li>
+<li><a href="guide-responding-to-events.html">Responding to Events</a></li>
+<li><a href="guide-validating-dialogues.html">Validating Dialogues</a></li>
+<li><a href="guide-internationalization.html">Internationalization</a></li>
+</ul>
+<p><strong>API Reference</strong></p>
+<ul>
+<li><a href="api-dialoguerunner.html">DialogueRunner API</a></li>
+<li><a href="api-navigation.html">Navigation API</a></li>
+<li><a href="api-state.html">State API</a></li>
+<li><a href="api-types.html">Types Reference</a></li>
+<li><a href="api-validation.html">Validation API</a></li>
+<li><a href="api-i18n.html">I18n API</a></li>
+<li><a href="api-errors.html">Errors</a></li>
+</ul>
+
+        </nav>
+      </aside>
+
+      <main class="manual-content">
+        <article class="manual-article">
+<h1>State API</h1>
+<p>Methods for serializing, deserializing, and managing dialogue state.</p>
+<hr>
+<h2><code>runner.serialize()</code></h2>
+<p>Serializes the current dialogue state to a JSON-compatible object.</p>
+<p><strong>Signature:</strong></p>
+<pre><code class="language-typescript">serialize(): SerializedState
+</code></pre>
+<p><strong>Returns:</strong> <code>SerializedState</code> — Object containing dialogue ID, current node, history, and conversation flags.</p>
+<p><strong>Example:</strong></p>
+<pre><code class="language-typescript">await runner.start(dialogue)
+await runner.choose(0)
+await runner.choose(1)
+
+const state = runner.serialize()
+
+// Store as JSON
+localStorage.setItem(&#39;dialogue_save&#39;, JSON.stringify(state))
+
+console.log(state)
+// {
+//   dialogueId: &#39;quest-dialogue&#39;,
+//   currentNodeId: &#39;node3&#39;,
+//   history: [...],
+//   conversationFlags: { discussed: true }
+// }
+</code></pre>
+<p><strong>Throws:</strong></p>
+<ul>
+<li><code>ValidationError</code> — When no active dialogue</li>
+</ul>
+<p><strong>Notes:</strong></p>
+<ul>
+<li>Game flags are NOT included (manage separately)</li>
+<li>The returned object is safe to pass to <code>JSON.stringify()</code></li>
+</ul>
+<hr>
+<h2><code>runner.deserialize()</code></h2>
+<p>Restores dialogue state from a previously serialized state.</p>
+<p><strong>Signature:</strong></p>
+<pre><code class="language-typescript">deserialize(state: SerializedState): Promise&lt;void&gt;
+</code></pre>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>state</code></td>
+<td><code>SerializedState</code></td>
+<td>Yes</td>
+<td>Previously serialized state</td>
+</tr>
+</tbody></table>
+<p><strong>Returns:</strong> <code>Promise&lt;void&gt;</code></p>
+<p><strong>Example:</strong></p>
+<pre><code class="language-typescript">// Load saved state
+const savedJson = localStorage.getItem(&#39;dialogue_save&#39;)
+const savedState = JSON.parse(savedJson)
+
+// Must start the same dialogue first
+await runner.start(dialogue)
+
+// Then restore state
+await runner.deserialize(savedState)
+
+console.log(runner.getCurrentNode()?.text)  // Restored position
+console.log(runner.getHistory().length)     // Restored history
+</code></pre>
+<p><strong>Throws:</strong></p>
+<ul>
+<li><code>ValidationError</code> — When no dialogue has been started</li>
+</ul>
+<p><strong>Notes:</strong></p>
+<ul>
+<li>Call <code>start()</code> with the same dialogue before <code>deserialize()</code></li>
+<li>Fires <code>onNodeEnter</code> for the restored node</li>
+<li>Restores history and conversation flags</li>
+</ul>
+<hr>
+<h2><code>runner.getConversationFlags()</code></h2>
+<p>Returns a copy of all conversation flags.</p>
+<p><strong>Signature:</strong></p>
+<pre><code class="language-typescript">getConversationFlags(): Record&lt;string, FlagValue&gt;
+</code></pre>
+<p><strong>Returns:</strong> <code>Record&lt;string, FlagValue&gt;</code> — Copy of conversation flag values.</p>
+<p><strong>Example:</strong></p>
+<pre><code class="language-typescript">const flags = runner.getConversationFlags()
+
+console.log(flags)
+// { discussed_quest: true, mood: &#39;friendly&#39; }
+
+// This is a copy - modifications don&#39;t affect internal state
+flags.discussed_quest = false
+console.log(runner.getConversationFlags().discussed_quest)  // Still true
+</code></pre>
+<hr>
+<h2><code>runner.clearConversationFlags()</code></h2>
+<p>Clears all conversation flags.</p>
+<p><strong>Signature:</strong></p>
+<pre><code class="language-typescript">clearConversationFlags(): void
+</code></pre>
+<p><strong>Returns:</strong> <code>void</code></p>
+<p><strong>Example:</strong></p>
+<pre><code class="language-typescript">await runner.start(dialogue)
+// ... some choices that set conversation flags ...
+
+console.log(Object.keys(runner.getConversationFlags()).length)  // 3
+
+runner.clearConversationFlags()
+
+console.log(Object.keys(runner.getConversationFlags()).length)  // 0
+</code></pre>
+<hr>
+<h2><code>runner.on()</code></h2>
+<p>Registers an event listener for dialogue events.</p>
+<p><strong>Signature:</strong></p>
+<pre><code class="language-typescript">on(event: string, callback: (...args: unknown[]) =&gt; void): void
+</code></pre>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>event</code></td>
+<td><code>string</code></td>
+<td>Yes</td>
+<td>Event name to listen for</td>
+</tr>
+<tr>
+<td><code>callback</code></td>
+<td><code>function</code></td>
+<td>Yes</td>
+<td>Handler function</td>
+</tr>
+</tbody></table>
+<p><strong>Returns:</strong> <code>void</code></p>
+<p><strong>Example:</strong></p>
+<pre><code class="language-typescript">runner.on(&#39;nodeEnter&#39;, (node, speaker) =&gt; {
+  console.log(`Entered: ${node.text}`)
+})
+
+runner.on(&#39;choiceSelected&#39;, (choice, index) =&gt; {
+  console.log(`Chose: ${choice.text}`)
+})
+</code></pre>
+<p><strong>Available Events:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Arguments</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>nodeEnter</code></td>
+<td><code>(node, speaker?)</code></td>
+<td>Fired when entering a node</td>
+</tr>
+<tr>
+<td><code>nodeExit</code></td>
+<td><code>(node)</code></td>
+<td>Fired when leaving a node</td>
+</tr>
+<tr>
+<td><code>choiceSelected</code></td>
+<td><code>(choice, index)</code></td>
+<td>Fired when a choice is made</td>
+</tr>
+<tr>
+<td><code>dialogueStart</code></td>
+<td><code>(dialogue)</code></td>
+<td>Fired when dialogue starts</td>
+</tr>
+<tr>
+<td><code>dialogueEnd</code></td>
+<td><code>(dialogueId, endNode?)</code></td>
+<td>Fired when dialogue ends</td>
+</tr>
+<tr>
+<td><code>actionExecuted</code></td>
+<td><code>(action, result?)</code></td>
+<td>Fired after action executes</td>
+</tr>
+<tr>
+<td><code>conditionEvaluated</code></td>
+<td><code>(condition, result)</code></td>
+<td>Fired after condition check</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>Types</h2>
+<h3><code>SerializedState</code></h3>
+<pre><code class="language-typescript">interface SerializedState {
+  dialogueId: string
+  currentNodeId: string
+  history: HistoryEntry[]
+  conversationFlags: Record&lt;string, FlagValue&gt;
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>dialogueId</code></td>
+<td><code>string</code></td>
+<td>ID of the serialized dialogue</td>
+</tr>
+<tr>
+<td><code>currentNodeId</code></td>
+<td><code>string</code></td>
+<td>ID of the current node</td>
+</tr>
+<tr>
+<td><code>history</code></td>
+<td><code>HistoryEntry[]</code></td>
+<td>Full history stack</td>
+</tr>
+<tr>
+<td><code>conversationFlags</code></td>
+<td><code>Record&lt;string, FlagValue&gt;</code></td>
+<td>Conversation flag values</td>
+</tr>
+</tbody></table>
+<h3><code>FlagValue</code></h3>
+<pre><code class="language-typescript">type FlagValue = boolean | number | string
+</code></pre>
+<p>Supported value types for flags.</p>
+
+        </article>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Validation API - @motioneffector/dialogue</title>
+  <link rel="stylesheet" href="../demo-files/demo.css">
+  <link rel="stylesheet" href="manual.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <h1 class="header-title">@motioneffector/dialogue</h1>
+      <p class="header-description">Documentation</p>
+      <nav class="header-links">
+        <a href="../index.html" class="header-link">Demo</a>
+        <a href="https://www.npmjs.com/package/@motioneffector/dialogue" class="header-link">npm</a>
+        <a href="https://github.com/motioneffector/dialogue" class="header-link">GitHub</a>
+      </nav>
+    </header>
+
+    <div class="manual-layout">
+      <aside class="manual-sidebar">
+        <nav class="sidebar-nav">
+<p><strong><a href="index.html">@motioneffector/dialogue</a></strong></p>
+<p><strong>Getting Started</strong></p>
+<ul>
+<li><a href="installation.html">Installation</a></li>
+<li><a href="your-first-dialogue.html">Your First Dialogue</a></li>
+</ul>
+<p><strong>Core Concepts</strong></p>
+<ul>
+<li><a href="concept-dialogue-trees.html">Dialogue Trees</a></li>
+<li><a href="concept-dialoguerunner.html">The DialogueRunner</a></li>
+<li><a href="concept-flags.html">Flags</a></li>
+<li><a href="concept-conditions.html">Conditions</a></li>
+<li><a href="concept-actions.html">Actions</a></li>
+</ul>
+<p><strong>Guides</strong></p>
+<ul>
+<li><a href="guide-conditional-choices.html">Conditional Choices</a></li>
+<li><a href="guide-working-with-flags.html">Working with Flags</a></li>
+<li><a href="guide-dynamic-text.html">Dynamic Text</a></li>
+<li><a href="guide-configuring-speakers.html">Configuring Speakers</a></li>
+<li><a href="guide-navigating-history.html">Navigating History</a></li>
+<li><a href="guide-saving-and-restoring-state.html">Saving and Restoring State</a></li>
+<li><a href="guide-responding-to-events.html">Responding to Events</a></li>
+<li><a href="guide-validating-dialogues.html">Validating Dialogues</a></li>
+<li><a href="guide-internationalization.html">Internationalization</a></li>
+</ul>
+<p><strong>API Reference</strong></p>
+<ul>
+<li><a href="api-dialoguerunner.html">DialogueRunner API</a></li>
+<li><a href="api-navigation.html">Navigation API</a></li>
+<li><a href="api-state.html">State API</a></li>
+<li><a href="api-types.html">Types Reference</a></li>
+<li><a href="api-validation.html">Validation API</a></li>
+<li><a href="api-i18n.html">I18n API</a></li>
+<li><a href="api-errors.html">Errors</a></li>
+</ul>
+
+        </nav>
+      </aside>
+
+      <main class="manual-content">
+        <article class="manual-article">
+<h1>Validation API</h1>
+<p>Functions for validating dialogue structure before runtime.</p>
+<hr>
+<h2><code>validateDialogue()</code></h2>
+<p>Validates a dialogue definition for structural correctness.</p>
+<p><strong>Signature:</strong></p>
+<pre><code class="language-typescript">function validateDialogue(dialogue: DialogueDefinition): ValidationResult
+</code></pre>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>dialogue</code></td>
+<td><code>DialogueDefinition</code></td>
+<td>Yes</td>
+<td>The dialogue to validate</td>
+</tr>
+</tbody></table>
+<p><strong>Returns:</strong> <code>ValidationResult</code> — Object with <code>valid</code> boolean and <code>errors</code> array.</p>
+<p><strong>Example:</strong></p>
+<pre><code class="language-typescript">import { validateDialogue } from &#39;@motioneffector/dialogue&#39;
+
+const dialogue = {
+  id: &#39;test&#39;,
+  startNode: &#39;start&#39;,
+  nodes: {
+    start: {
+      text: &#39;Hello!&#39;,
+      choices: [{ text: &#39;Continue&#39;, next: &#39;end&#39; }]
+    },
+    end: { text: &#39;Goodbye!&#39;, isEnd: true }
+  }
+}
+
+const result = validateDialogue(dialogue)
+
+if (result.valid) {
+  console.log(&#39;Dialogue is valid!&#39;)
+} else {
+  console.error(&#39;Validation errors:&#39;)
+  result.errors.forEach(error =&gt; console.error(`  - ${error}`))
+}
+</code></pre>
+<p><strong>Checks Performed:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Error Message</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Start node exists</td>
+<td><code>Start node &quot;X&quot; not found in nodes</code></td>
+</tr>
+<tr>
+<td>Has at least one node</td>
+<td><code>Dialogue has no nodes</code></td>
+</tr>
+<tr>
+<td>Choice targets exist</td>
+<td><code>Choice in node &quot;X&quot; targets non-existent node &quot;Y&quot;</code></td>
+</tr>
+<tr>
+<td>Auto-advance targets exist</td>
+<td><code>Node &quot;X&quot; auto-advances to non-existent node &quot;Y&quot;</code></td>
+</tr>
+<tr>
+<td>No orphan nodes</td>
+<td><code>Unreachable nodes: X, Y, Z</code></td>
+</tr>
+<tr>
+<td>No prototype pollution</td>
+<td><code>Invalid node reference: &quot;__proto__&quot;</code></td>
+</tr>
+</tbody></table>
+<hr>
+<h2>Types</h2>
+<h3><code>ValidationResult</code></h3>
+<pre><code class="language-typescript">interface ValidationResult {
+  valid: boolean
+  errors: string[]
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>valid</code></td>
+<td><code>boolean</code></td>
+<td>True if no errors were found</td>
+</tr>
+<tr>
+<td><code>errors</code></td>
+<td><code>string[]</code></td>
+<td>Array of error message strings</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>Usage Patterns</h2>
+<h3>Build-Time Validation</h3>
+<pre><code class="language-typescript">import { validateDialogue } from &#39;@motioneffector/dialogue&#39;
+import dialogues from &#39;./dialogues.json&#39;
+
+function validateAllDialogues() {
+  const errors: string[] = []
+
+  for (const dialogue of dialogues) {
+    const result = validateDialogue(dialogue)
+    if (!result.valid) {
+      errors.push(`[${dialogue.id}]`)
+      result.errors.forEach(e =&gt; errors.push(`  ${e}`))
+    }
+  }
+
+  if (errors.length &gt; 0) {
+    console.error(&#39;Dialogue validation failed:&#39;)
+    errors.forEach(e =&gt; console.error(e))
+    process.exit(1)
+  }
+
+  console.log(`Validated ${dialogues.length} dialogues successfully`)
+}
+</code></pre>
+<h3>Runtime Validation (Development Only)</h3>
+<pre><code class="language-typescript">function loadDialogue(dialogue: DialogueDefinition) {
+  if (process.env.NODE_ENV === &#39;development&#39;) {
+    const result = validateDialogue(dialogue)
+    if (!result.valid) {
+      throw new Error(`Invalid dialogue &quot;${dialogue.id}&quot;: ${result.errors.join(&#39;, &#39;)}`)
+    }
+  }
+  return dialogue
+}
+</code></pre>
+<h3>Custom Validation Extension</h3>
+<pre><code class="language-typescript">function validateWithCustomRules(dialogue: DialogueDefinition): ValidationResult {
+  // Run built-in validation
+  const result = validateDialogue(dialogue)
+
+  // Add custom rules
+  for (const [nodeId, node] of Object.entries(dialogue.nodes)) {
+    // Require speaker for non-end nodes
+    if (!node.isEnd &amp;&amp; !node.speaker) {
+      result.valid = false
+      result.errors.push(`Node &quot;${nodeId}&quot; missing speaker`)
+    }
+
+    // Require tags
+    if (!node.tags || node.tags.length === 0) {
+      result.valid = false
+      result.errors.push(`Node &quot;${nodeId}&quot; has no tags`)
+    }
+  }
+
+  return result
+}
+</code></pre>
+
+        </article>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

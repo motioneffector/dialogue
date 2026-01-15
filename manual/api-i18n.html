@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>I18n API - @motioneffector/dialogue</title>
+  <link rel="stylesheet" href="../demo-files/demo.css">
+  <link rel="stylesheet" href="manual.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <h1 class="header-title">@motioneffector/dialogue</h1>
+      <p class="header-description">Documentation</p>
+      <nav class="header-links">
+        <a href="../index.html" class="header-link">Demo</a>
+        <a href="https://www.npmjs.com/package/@motioneffector/dialogue" class="header-link">npm</a>
+        <a href="https://github.com/motioneffector/dialogue" class="header-link">GitHub</a>
+      </nav>
+    </header>
+
+    <div class="manual-layout">
+      <aside class="manual-sidebar">
+        <nav class="sidebar-nav">
+<p><strong><a href="index.html">@motioneffector/dialogue</a></strong></p>
+<p><strong>Getting Started</strong></p>
+<ul>
+<li><a href="installation.html">Installation</a></li>
+<li><a href="your-first-dialogue.html">Your First Dialogue</a></li>
+</ul>
+<p><strong>Core Concepts</strong></p>
+<ul>
+<li><a href="concept-dialogue-trees.html">Dialogue Trees</a></li>
+<li><a href="concept-dialoguerunner.html">The DialogueRunner</a></li>
+<li><a href="concept-flags.html">Flags</a></li>
+<li><a href="concept-conditions.html">Conditions</a></li>
+<li><a href="concept-actions.html">Actions</a></li>
+</ul>
+<p><strong>Guides</strong></p>
+<ul>
+<li><a href="guide-conditional-choices.html">Conditional Choices</a></li>
+<li><a href="guide-working-with-flags.html">Working with Flags</a></li>
+<li><a href="guide-dynamic-text.html">Dynamic Text</a></li>
+<li><a href="guide-configuring-speakers.html">Configuring Speakers</a></li>
+<li><a href="guide-navigating-history.html">Navigating History</a></li>
+<li><a href="guide-saving-and-restoring-state.html">Saving and Restoring State</a></li>
+<li><a href="guide-responding-to-events.html">Responding to Events</a></li>
+<li><a href="guide-validating-dialogues.html">Validating Dialogues</a></li>
+<li><a href="guide-internationalization.html">Internationalization</a></li>
+</ul>
+<p><strong>API Reference</strong></p>
+<ul>
+<li><a href="api-dialoguerunner.html">DialogueRunner API</a></li>
+<li><a href="api-navigation.html">Navigation API</a></li>
+<li><a href="api-state.html">State API</a></li>
+<li><a href="api-types.html">Types Reference</a></li>
+<li><a href="api-validation.html">Validation API</a></li>
+<li><a href="api-i18n.html">I18n API</a></li>
+<li><a href="api-errors.html">Errors</a></li>
+</ul>
+
+        </nav>
+      </aside>
+
+      <main class="manual-content">
+        <article class="manual-article">
+<h1>I18n API</h1>
+<p>Functions and interfaces for internationalization support.</p>
+<hr>
+<h2><code>createI18nAdapter()</code></h2>
+<p>Creates an I18nAdapter from an @motioneffector/i18n instance.</p>
+<p><strong>Signature:</strong></p>
+<pre><code class="language-typescript">function createI18nAdapter(i18n: I18nInstance): I18nAdapter
+</code></pre>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>i18n</code></td>
+<td><code>I18nInstance</code></td>
+<td>Yes</td>
+<td>An @motioneffector/i18n instance</td>
+</tr>
+</tbody></table>
+<p><strong>Returns:</strong> <code>I18nAdapter</code> — Adapter compatible with the dialogue runner.</p>
+<p><strong>Example:</strong></p>
+<pre><code class="language-typescript">import { createDialogueRunner, createI18nAdapter } from &#39;@motioneffector/dialogue&#39;
+import { createI18n } from &#39;@motioneffector/i18n&#39;
+
+const i18n = createI18n({
+  locale: &#39;en&#39;,
+  messages: {
+    en: {
+      &#39;greeting.hello&#39;: &#39;Hello!&#39;,
+      &#39;greeting.goodbye&#39;: &#39;Goodbye!&#39;
+    },
+    es: {
+      &#39;greeting.hello&#39;: &#39;¡Hola!&#39;,
+      &#39;greeting.goodbye&#39;: &#39;¡Adiós!&#39;
+    }
+  }
+})
+
+const adapter = createI18nAdapter(i18n)
+
+const runner = createDialogueRunner({ i18n: adapter })
+</code></pre>
+<hr>
+<h2>Types</h2>
+<h3><code>I18nAdapter</code></h3>
+<p>Interface that adapters must implement.</p>
+<pre><code class="language-typescript">interface I18nAdapter {
+  t: (key: string, params?: Record&lt;string, unknown&gt;) =&gt; string
+  hasKey: (key: string) =&gt; boolean
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>t(key, params?)</code></td>
+<td>Translate a key, optionally with interpolation parameters</td>
+</tr>
+<tr>
+<td><code>hasKey(key)</code></td>
+<td>Check if a translation key exists</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>Custom Adapters</h2>
+<p>You can create custom adapters for any i18n library:</p>
+<h3>Simple Object Adapter</h3>
+<pre><code class="language-typescript">const translations = {
+  &#39;greeting&#39;: &#39;Hello!&#39;,
+  &#39;farewell&#39;: &#39;Goodbye!&#39;
+}
+
+const adapter: I18nAdapter = {
+  t: (key) =&gt; translations[key] || key,
+  hasKey: (key) =&gt; key in translations
+}
+</code></pre>
+<h3>react-i18next Adapter</h3>
+<pre><code class="language-typescript">import i18next from &#39;i18next&#39;
+
+const adapter: I18nAdapter = {
+  t: (key, params) =&gt; i18next.t(key, params),
+  hasKey: (key) =&gt; i18next.exists(key)
+}
+</code></pre>
+<h3>FormatJS / react-intl Adapter</h3>
+<pre><code class="language-typescript">import { IntlShape } from &#39;react-intl&#39;
+
+function createIntlAdapter(intl: IntlShape): I18nAdapter {
+  return {
+    t: (key, params) =&gt; intl.formatMessage({ id: key }, params),
+    hasKey: (key) =&gt; intl.messages[key] !== undefined
+  }
+}
+</code></pre>
+<hr>
+<h2>How Translation Works</h2>
+<p>When the runner processes node text:</p>
+<ol>
+<li>Calls <code>hasKey(text)</code> to check if text is a translation key</li>
+<li>If true: calls <code>t(text, params)</code> to get translated text</li>
+<li>If false: uses text as-is (literal text)</li>
+<li>After translation: applies interpolation (<code>{{flag}}</code> replacement)</li>
+</ol>
+<pre><code class="language-typescript">const dialogue = {
+  id: &#39;example&#39;,
+  startNode: &#39;start&#39;,
+  nodes: {
+    start: {
+      // This is a translation key
+      text: &#39;greeting.welcome&#39;,
+      next: &#39;literal&#39;
+    },
+    literal: {
+      // This is literal text (hasKey returns false)
+      text: &#39;This text is not translated.&#39;,
+      isEnd: true
+    }
+  }
+}
+</code></pre>
+<hr>
+<h2>Parameters in Translations</h2>
+<p>The <code>t()</code> method receives parameters that can be used for interpolation:</p>
+<pre><code class="language-typescript">// Translation: &quot;Hello, {name}!&quot;
+const adapter: I18nAdapter = {
+  t: (key, params) =&gt; {
+    const templates = {
+      &#39;greeting&#39;: &#39;Hello, {name}!&#39;
+    }
+    let text = templates[key] || key
+    if (params) {
+      for (const [k, v] of Object.entries(params)) {
+        text = text.replace(`{${k}}`, String(v))
+      }
+    }
+    return text
+  },
+  hasKey: (key) =&gt; key in templates
+}
+</code></pre>
+<p>Note: The dialogue system&#39;s own <code>{{flag}}</code> interpolation runs AFTER i18n translation, so you can combine both:</p>
+<pre><code class="language-typescript">// Translation: &quot;Welcome back, {name}!&quot;
+// Node text: &quot;greeting.welcome&quot;
+// Final result after i18n + interpolation: &quot;Welcome back, Hero!&quot;
+</code></pre>
+
+        </article>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

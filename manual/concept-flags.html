@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flags - @motioneffector/dialogue</title>
+  <link rel="stylesheet" href="../demo-files/demo.css">
+  <link rel="stylesheet" href="manual.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <h1 class="header-title">@motioneffector/dialogue</h1>
+      <p class="header-description">Documentation</p>
+      <nav class="header-links">
+        <a href="../index.html" class="header-link">Demo</a>
+        <a href="https://www.npmjs.com/package/@motioneffector/dialogue" class="header-link">npm</a>
+        <a href="https://github.com/motioneffector/dialogue" class="header-link">GitHub</a>
+      </nav>
+    </header>
+
+    <div class="manual-layout">
+      <aside class="manual-sidebar">
+        <nav class="sidebar-nav">
+<p><strong><a href="index.html">@motioneffector/dialogue</a></strong></p>
+<p><strong>Getting Started</strong></p>
+<ul>
+<li><a href="installation.html">Installation</a></li>
+<li><a href="your-first-dialogue.html">Your First Dialogue</a></li>
+</ul>
+<p><strong>Core Concepts</strong></p>
+<ul>
+<li><a href="concept-dialogue-trees.html">Dialogue Trees</a></li>
+<li><a href="concept-dialoguerunner.html">The DialogueRunner</a></li>
+<li><a href="concept-flags.html">Flags</a></li>
+<li><a href="concept-conditions.html">Conditions</a></li>
+<li><a href="concept-actions.html">Actions</a></li>
+</ul>
+<p><strong>Guides</strong></p>
+<ul>
+<li><a href="guide-conditional-choices.html">Conditional Choices</a></li>
+<li><a href="guide-working-with-flags.html">Working with Flags</a></li>
+<li><a href="guide-dynamic-text.html">Dynamic Text</a></li>
+<li><a href="guide-configuring-speakers.html">Configuring Speakers</a></li>
+<li><a href="guide-navigating-history.html">Navigating History</a></li>
+<li><a href="guide-saving-and-restoring-state.html">Saving and Restoring State</a></li>
+<li><a href="guide-responding-to-events.html">Responding to Events</a></li>
+<li><a href="guide-validating-dialogues.html">Validating Dialogues</a></li>
+<li><a href="guide-internationalization.html">Internationalization</a></li>
+</ul>
+<p><strong>API Reference</strong></p>
+<ul>
+<li><a href="api-dialoguerunner.html">DialogueRunner API</a></li>
+<li><a href="api-navigation.html">Navigation API</a></li>
+<li><a href="api-state.html">State API</a></li>
+<li><a href="api-types.html">Types Reference</a></li>
+<li><a href="api-validation.html">Validation API</a></li>
+<li><a href="api-i18n.html">I18n API</a></li>
+<li><a href="api-errors.html">Errors</a></li>
+</ul>
+
+        </nav>
+      </aside>
+
+      <main class="manual-content">
+        <article class="manual-article">
+<h1>Flags</h1>
+<p>Flags are key-value state that dialogues can read and write. They power conditional choices (&quot;show this option only if the player has a key&quot;) and dynamic text (&quot;Hello, {{playerName}}!&quot;).</p>
+<h2>How It Works</h2>
+<p>There are two flag scopes:</p>
+<p><strong>Game flags</strong> are persistent and shared across all dialogues. Use them for inventory, quest progress, relationship stats, and anything that should persist.</p>
+<p><strong>Conversation flags</strong> are ephemeral and reset when a new dialogue starts. Use them for dialogue-specific state like &quot;has the NPC mentioned the secret yet?&quot;</p>
+<pre><code>┌────────────────────────────────────┐
+│          Game Flags                │
+│  (persistent across dialogues)     │
+│                                    │
+│  gold: 150                         │
+│  hasKey: true                      │
+│  questComplete: false              │
+└────────────────────────────────────┘
+
+┌────────────────────────────────────┐
+│     Conversation Flags             │
+│  (reset per dialogue)              │
+│                                    │
+│  mentionedSecret: true             │
+│  askedAboutWeather: true           │
+└────────────────────────────────────┘
+</code></pre>
+<h2>Basic Usage</h2>
+<pre><code class="language-typescript">import { createDialogueRunner } from &#39;@motioneffector/dialogue&#39;
+
+// Option 1: Use internal flag store (simple games)
+const runner = createDialogueRunner()
+
+// Option 2: Provide your own flag store (recommended for real games)
+import { createFlagStore } from &#39;@motioneffector/flags&#39;
+const gameFlags = createFlagStore()
+gameFlags.set(&#39;gold&#39;, 100)
+
+const runner = createDialogueRunner({ gameFlags })
+</code></pre>
+<p>Flags are set via <a href="concept-actions.html">Actions</a> in nodes or choices:</p>
+<pre><code class="language-typescript">const dialogue = {
+  id: &#39;example&#39;,
+  startNode: &#39;start&#39;,
+  nodes: {
+    start: {
+      text: &#39;You found a key!&#39;,
+      actions: [
+        { type: &#39;set&#39;, flag: &#39;hasKey&#39;, value: true },           // Game flag
+        { type: &#39;set&#39;, flag: &#39;conv:foundItem&#39;, value: true }    // Conversation flag
+      ]
+    }
+  }
+}
+</code></pre>
+<h2>Key Points</h2>
+<ul>
+<li><p><strong>Prefix notation</strong>: Use <code>conv:flagName</code> for conversation flags. Unprefixed flags (or <code>game:flagName</code>) are game flags.</p>
+</li>
+<li><p><strong>Flag values</strong> can be boolean, number, or string. Choose based on what you&#39;re tracking.</p>
+</li>
+<li><p><strong>Conditions</strong> read flags to show/hide choices. See <a href="concept-conditions.html">Conditions</a>.</p>
+</li>
+<li><p><strong>Interpolation</strong> inserts flag values into text: <code>&quot;You have {{gold}} gold.&quot;</code></p>
+</li>
+<li><p><strong>Conversation flags clear</strong> when you call <code>runner.start()</code> on a new dialogue. Game flags persist.</p>
+</li>
+</ul>
+<h2>Examples</h2>
+<h3>Setting Flags</h3>
+<pre><code class="language-typescript">// In a node&#39;s actions array
+actions: [
+  { type: &#39;set&#39;, flag: &#39;questStarted&#39;, value: true },
+  { type: &#39;set&#39;, flag: &#39;gold&#39;, value: 500 },
+  { type: &#39;set&#39;, flag: &#39;playerName&#39;, value: &#39;Hero&#39; }
+]
+</code></pre>
+<h3>Incrementing/Decrementing</h3>
+<pre><code class="language-typescript">actions: [
+  { type: &#39;increment&#39;, flag: &#39;visitCount&#39; },           // +1
+  { type: &#39;increment&#39;, flag: &#39;gold&#39;, value: 50 },      // +50
+  { type: &#39;decrement&#39;, flag: &#39;health&#39;, value: 10 }     // -10
+]
+</code></pre>
+<h3>Clearing Flags</h3>
+<pre><code class="language-typescript">actions: [
+  { type: &#39;clear&#39;, flag: &#39;tempBuff&#39; }  // Remove the flag entirely
+]
+</code></pre>
+<h3>Conversation Flags for Dialogue State</h3>
+<pre><code class="language-typescript">const dialogue = {
+  id: &#39;secret-keeper&#39;,
+  startNode: &#39;start&#39;,
+  nodes: {
+    start: {
+      text: &#39;Hello again.&#39;,
+      choices: [
+        {
+          text: &#39;Tell me the secret&#39;,
+          next: &#39;secret&#39;,
+          conditions: { not: { check: [&#39;conv:heardSecret&#39;, &#39;==&#39;, true] } }
+        },
+        {
+          text: &#39;Remind me of the secret&#39;,
+          next: &#39;reminder&#39;,
+          conditions: { check: [&#39;conv:heardSecret&#39;, &#39;==&#39;, true] }
+        }
+      ]
+    },
+    secret: {
+      text: &#39;The treasure is buried under the old oak tree.&#39;,
+      actions: [{ type: &#39;set&#39;, flag: &#39;conv:heardSecret&#39;, value: true }],
+      next: &#39;start&#39;
+    },
+    reminder: {
+      text: &#39;As I said, check under the old oak tree.&#39;,
+      next: &#39;start&#39;
+    }
+  }
+}
+</code></pre>
+<p>The NPC remembers what they&#39;ve told you within this conversation, but forgets if you leave and return.</p>
+<h3>Accessing Flags at Runtime</h3>
+<pre><code class="language-typescript">// Get all conversation flags
+const convFlags = runner.getConversationFlags()
+console.log(convFlags)  // { heardSecret: true, ... }
+
+// Clear conversation flags manually
+runner.clearConversationFlags()
+
+// Game flags are accessed through your flag store
+console.log(gameFlags.get(&#39;gold&#39;))
+</code></pre>
+<h2>Related</h2>
+<ul>
+<li><strong><a href="concept-actions.html">Actions</a></strong> - Commands that modify flags</li>
+<li><strong><a href="concept-conditions.html">Conditions</a></strong> - Expressions that read flags</li>
+<li><strong><a href="guide-working-with-flags.html">Working with Flags</a></strong> - Practical guide to flag management</li>
+<li><strong><a href="guide-dynamic-text.html">Dynamic Text</a></strong> - Interpolating flag values into text</li>
+</ul>
+
+        </article>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

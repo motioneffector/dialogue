@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conditional Choices - @motioneffector/dialogue</title>
+  <link rel="stylesheet" href="../demo-files/demo.css">
+  <link rel="stylesheet" href="manual.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <h1 class="header-title">@motioneffector/dialogue</h1>
+      <p class="header-description">Documentation</p>
+      <nav class="header-links">
+        <a href="../index.html" class="header-link">Demo</a>
+        <a href="https://www.npmjs.com/package/@motioneffector/dialogue" class="header-link">npm</a>
+        <a href="https://github.com/motioneffector/dialogue" class="header-link">GitHub</a>
+      </nav>
+    </header>
+
+    <div class="manual-layout">
+      <aside class="manual-sidebar">
+        <nav class="sidebar-nav">
+<p><strong><a href="index.html">@motioneffector/dialogue</a></strong></p>
+<p><strong>Getting Started</strong></p>
+<ul>
+<li><a href="installation.html">Installation</a></li>
+<li><a href="your-first-dialogue.html">Your First Dialogue</a></li>
+</ul>
+<p><strong>Core Concepts</strong></p>
+<ul>
+<li><a href="concept-dialogue-trees.html">Dialogue Trees</a></li>
+<li><a href="concept-dialoguerunner.html">The DialogueRunner</a></li>
+<li><a href="concept-flags.html">Flags</a></li>
+<li><a href="concept-conditions.html">Conditions</a></li>
+<li><a href="concept-actions.html">Actions</a></li>
+</ul>
+<p><strong>Guides</strong></p>
+<ul>
+<li><a href="guide-conditional-choices.html">Conditional Choices</a></li>
+<li><a href="guide-working-with-flags.html">Working with Flags</a></li>
+<li><a href="guide-dynamic-text.html">Dynamic Text</a></li>
+<li><a href="guide-configuring-speakers.html">Configuring Speakers</a></li>
+<li><a href="guide-navigating-history.html">Navigating History</a></li>
+<li><a href="guide-saving-and-restoring-state.html">Saving and Restoring State</a></li>
+<li><a href="guide-responding-to-events.html">Responding to Events</a></li>
+<li><a href="guide-validating-dialogues.html">Validating Dialogues</a></li>
+<li><a href="guide-internationalization.html">Internationalization</a></li>
+</ul>
+<p><strong>API Reference</strong></p>
+<ul>
+<li><a href="api-dialoguerunner.html">DialogueRunner API</a></li>
+<li><a href="api-navigation.html">Navigation API</a></li>
+<li><a href="api-state.html">State API</a></li>
+<li><a href="api-types.html">Types Reference</a></li>
+<li><a href="api-validation.html">Validation API</a></li>
+<li><a href="api-i18n.html">I18n API</a></li>
+<li><a href="api-errors.html">Errors</a></li>
+</ul>
+
+        </nav>
+      </aside>
+
+      <main class="manual-content">
+        <article class="manual-article">
+<h1>Conditional Choices</h1>
+<p>Show or hide dialogue choices based on game state. This guide covers adding conditions to choices and handling different flag types.</p>
+<h2>Prerequisites</h2>
+<p>Before starting, you should:</p>
+<ul>
+<li><a href="your-first-dialogue.html">Complete Your First Dialogue</a></li>
+<li><a href="concept-flags.html">Understand Flags</a></li>
+</ul>
+<h2>Overview</h2>
+<p>We&#39;ll create a shop interaction where purchase options appear only when the player has enough gold.</p>
+<ol>
+<li>Define choices with conditions</li>
+<li>Set up flags for the conditions to check</li>
+<li>See choices appear/disappear based on state</li>
+<li>Handle unavailable choices gracefully</li>
+</ol>
+<h2>Step 1: Add Conditions to Choices</h2>
+<p>Conditions go in the <code>conditions</code> property of a choice. The basic format is <code>{ check: [&#39;flagName&#39;, &#39;operator&#39;, value] }</code>.</p>
+<pre><code class="language-typescript">import { createDialogueRunner, DialogueDefinition } from &#39;@motioneffector/dialogue&#39;
+
+const shopDialogue: DialogueDefinition = {
+  id: &#39;potion-shop&#39;,
+  startNode: &#39;menu&#39;,
+  nodes: {
+    menu: {
+      text: &#39;Welcome to the potion shop! What would you like?&#39;,
+      choices: [
+        {
+          text: &#39;Buy Health Potion (50 gold)&#39;,
+          next: &#39;bought-health&#39;,
+          conditions: { check: [&#39;gold&#39;, &#39;&gt;=&#39;, 50] }
+        },
+        {
+          text: &#39;Buy Mana Potion (75 gold)&#39;,
+          next: &#39;bought-mana&#39;,
+          conditions: { check: [&#39;gold&#39;, &#39;&gt;=&#39;, 75] }
+        },
+        {
+          text: &#39;Leave&#39;,
+          next: &#39;leave&#39;
+        }
+      ]
+    },
+    &#39;bought-health&#39;: {
+      text: &#39;Here is your Health Potion!&#39;,
+      actions: [{ type: &#39;decrement&#39;, flag: &#39;gold&#39;, value: 50 }],
+      next: &#39;menu&#39;
+    },
+    &#39;bought-mana&#39;: {
+      text: &#39;Here is your Mana Potion!&#39;,
+      actions: [{ type: &#39;decrement&#39;, flag: &#39;gold&#39;, value: 75 }],
+      next: &#39;menu&#39;
+    },
+    leave: {
+      text: &#39;Come back anytime!&#39;,
+      isEnd: true
+    }
+  }
+}
+</code></pre>
+<h2>Step 2: Set Up Game Flags</h2>
+<p>Create a flag store and set the player&#39;s gold before starting the dialogue.</p>
+<pre><code class="language-typescript">import { createFlagStore } from &#39;@motioneffector/flags&#39;
+
+const gameFlags = createFlagStore()
+gameFlags.set(&#39;gold&#39;, 100)
+
+const runner = createDialogueRunner({ gameFlags })
+await runner.start(shopDialogue)
+</code></pre>
+<p>With 100 gold, the player sees both potion options. After buying the 75-gold Mana Potion, only the Health Potion remains affordable.</p>
+<h2>Step 3: Using Compound Conditions</h2>
+<p>Combine multiple requirements with <code>and</code>, <code>or</code>, and <code>not</code>.</p>
+<pre><code class="language-typescript">{
+  text: &#39;Buy Legendary Sword&#39;,
+  next: &#39;bought-sword&#39;,
+  conditions: {
+    and: [
+      { check: [&#39;gold&#39;, &#39;&gt;=&#39;, 1000] },
+      { check: [&#39;reputation&#39;, &#39;&gt;=&#39;, 50] },
+      { check: [&#39;questComplete&#39;, &#39;==&#39;, true] }
+    ]
+  }
+}
+</code></pre>
+<p>This choice only appears if the player has 1000+ gold, 50+ reputation, AND completed the quest.</p>
+<pre><code class="language-typescript">{
+  text: &#39;Open the door&#39;,
+  next: &#39;opened&#39;,
+  conditions: {
+    or: [
+      { check: [&#39;hasKey&#39;, &#39;==&#39;, true] },
+      { check: [&#39;lockpickSkill&#39;, &#39;&gt;=&#39;, 10] }
+    ]
+  }
+}
+</code></pre>
+<p>This choice appears if the player has a key OR high lockpick skill.</p>
+<h2>Step 4: Show Unavailable Choices</h2>
+<p>Sometimes you want players to see what they&#39;re missing. Use <code>includeUnavailable: true</code>:</p>
+<pre><code class="language-typescript">const choices = runner.getChoices({ includeUnavailable: true })
+
+choices.forEach(choice =&gt; {
+  if (choice.available) {
+    console.log(`[${choice.text}]`)
+  } else {
+    console.log(`[${choice.text}] - ${choice.reason}`)
+    // Output: &quot;[Buy Mana Potion (75 gold)] - Conditions not met&quot;
+  }
+})
+</code></pre>
+<h2>Complete Example</h2>
+<pre><code class="language-typescript">import { createDialogueRunner, DialogueDefinition } from &#39;@motioneffector/dialogue&#39;
+import { createFlagStore } from &#39;@motioneffector/flags&#39;
+
+const dialogue: DialogueDefinition = {
+  id: &#39;guild-master&#39;,
+  startNode: &#39;greeting&#39;,
+  nodes: {
+    greeting: {
+      text: &#39;Welcome to the Adventurer\&#39;s Guild.&#39;,
+      choices: [
+        {
+          text: &#39;I want to join&#39;,
+          next: &#39;join-check&#39;,
+          conditions: { not: { check: [&#39;isGuildMember&#39;, &#39;==&#39;, true] } }
+        },
+        {
+          text: &#39;I\&#39;d like a quest&#39;,
+          next: &#39;quest-board&#39;,
+          conditions: { check: [&#39;isGuildMember&#39;, &#39;==&#39;, true] }
+        },
+        {
+          text: &#39;Request advanced quest&#39;,
+          next: &#39;advanced-quest&#39;,
+          conditions: {
+            and: [
+              { check: [&#39;isGuildMember&#39;, &#39;==&#39;, true] },
+              { check: [&#39;questsCompleted&#39;, &#39;&gt;=&#39;, 5] }
+            ]
+          }
+        },
+        { text: &#39;Goodbye&#39;, next: &#39;farewell&#39; }
+      ]
+    },
+    &#39;join-check&#39;: {
+      text: &#39;The fee is 100 gold. Do you have it?&#39;,
+      choices: [
+        {
+          text: &#39;Yes, here you go&#39;,
+          next: &#39;joined&#39;,
+          conditions: { check: [&#39;gold&#39;, &#39;&gt;=&#39;, 100] },
+          actions: [
+            { type: &#39;decrement&#39;, flag: &#39;gold&#39;, value: 100 },
+            { type: &#39;set&#39;, flag: &#39;isGuildMember&#39;, value: true }
+          ]
+        },
+        { text: &#39;I\&#39;ll come back later&#39;, next: &#39;greeting&#39; }
+      ]
+    },
+    joined: {
+      text: &#39;Welcome to the guild! Visit the quest board anytime.&#39;,
+      next: &#39;greeting&#39;
+    },
+    &#39;quest-board&#39;: {
+      text: &#39;Here are the available quests...&#39;,
+      isEnd: true
+    },
+    &#39;advanced-quest&#39;: {
+      text: &#39;Ah, a seasoned adventurer. I have a special task for you.&#39;,
+      isEnd: true
+    },
+    farewell: {
+      text: &#39;Safe travels!&#39;,
+      isEnd: true
+    }
+  }
+}
+
+async function main() {
+  const gameFlags = createFlagStore()
+  gameFlags.set(&#39;gold&#39;, 150)
+  gameFlags.set(&#39;isGuildMember&#39;, false)
+  gameFlags.set(&#39;questsCompleted&#39;, 0)
+
+  const runner = createDialogueRunner({ gameFlags })
+  await runner.start(dialogue)
+
+  // Player sees: &quot;I want to join&quot;, &quot;Goodbye&quot;
+  // &quot;I&#39;d like a quest&quot; is hidden (not a member)
+  // &quot;Request advanced quest&quot; is hidden (not a member)
+}
+</code></pre>
+<h2>Variations</h2>
+<h3>Using Conversation Flags</h3>
+<p>Track dialogue-specific state that resets between conversations:</p>
+<pre><code class="language-typescript">{
+  text: &#39;Tell me again about the treasure&#39;,
+  next: &#39;treasure-reminder&#39;,
+  conditions: { check: [&#39;conv:heardAboutTreasure&#39;, &#39;==&#39;, true] }
+}
+</code></pre>
+<h3>Disabled vs Conditional</h3>
+<p>Use <code>disabled: true</code> for choices that should be visible but not selectable:</p>
+<pre><code class="language-typescript">{
+  text: &#39;Enter the VIP area&#39;,
+  next: &#39;vip&#39;,
+  disabled: true,
+  disabledText: &#39;Members only&#39;
+}
+</code></pre>
+<p>To show disabled choices:</p>
+<pre><code class="language-typescript">const choices = runner.getChoices({ includeDisabled: true })
+</code></pre>
+<h2>Troubleshooting</h2>
+<h3>Choice Never Appears</h3>
+<p><strong>Symptom:</strong> A conditional choice never shows up.</p>
+<p><strong>Cause:</strong> The condition checks a flag that doesn&#39;t exist or has the wrong value.</p>
+<p><strong>Solution:</strong> Log your flags before <code>getChoices()</code>:</p>
+<pre><code class="language-typescript">console.log(gameFlags.all())
+const choices = runner.getChoices()
+</code></pre>
+<h3>Choice Appears When It Shouldn&#39;t</h3>
+<p><strong>Symptom:</strong> A choice appears even when conditions should fail.</p>
+<p><strong>Cause:</strong> Operator or value mismatch. <code>&#39;==&#39;</code> is strict equality.</p>
+<p><strong>Solution:</strong> Double-check types. <code>{ check: [&#39;count&#39;, &#39;==&#39;, &#39;5&#39;] }</code> won&#39;t match the number <code>5</code>.</p>
+<h2>See Also</h2>
+<ul>
+<li><strong><a href="concept-conditions.html">Conditions</a></strong> - Deep dive into condition syntax</li>
+<li><strong><a href="concept-flags.html">Flags</a></strong> - Understanding flag scopes</li>
+<li><strong><a href="api-dialoguerunner.html">DialogueRunner API</a></strong> - getChoices() options</li>
+</ul>
+
+        </article>
+      </main>
+    </div>
+  </div>
+</body>
+</html>
