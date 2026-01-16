@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Working with Flags - @motioneffector/dialogue</title>
+  <link rel="stylesheet" href="../demo-files/demo.css">
+  <link rel="stylesheet" href="manual.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <h1 class="header-title">@motioneffector/dialogue</h1>
+      <p class="header-description">Documentation</p>
+      <nav class="header-links">
+        <a href="../index.html" class="header-link">Demo</a>
+        <a href="https://www.npmjs.com/package/@motioneffector/dialogue" class="header-link">npm</a>
+        <a href="https://github.com/motioneffector/dialogue" class="header-link">GitHub</a>
+      </nav>
+    </header>
+
+    <div class="manual-layout">
+      <aside class="manual-sidebar">
+        <nav class="sidebar-nav">
+<p><strong><a href="index.html">@motioneffector/dialogue</a></strong></p>
+<p><strong>Getting Started</strong></p>
+<ul>
+<li><a href="installation.html">Installation</a></li>
+<li><a href="your-first-dialogue.html">Your First Dialogue</a></li>
+</ul>
+<p><strong>Core Concepts</strong></p>
+<ul>
+<li><a href="concept-dialogue-trees.html">Dialogue Trees</a></li>
+<li><a href="concept-dialoguerunner.html">The DialogueRunner</a></li>
+<li><a href="concept-flags.html">Flags</a></li>
+<li><a href="concept-conditions.html">Conditions</a></li>
+<li><a href="concept-actions.html">Actions</a></li>
+</ul>
+<p><strong>Guides</strong></p>
+<ul>
+<li><a href="guide-conditional-choices.html">Conditional Choices</a></li>
+<li><a href="guide-working-with-flags.html">Working with Flags</a></li>
+<li><a href="guide-dynamic-text.html">Dynamic Text</a></li>
+<li><a href="guide-configuring-speakers.html">Configuring Speakers</a></li>
+<li><a href="guide-navigating-history.html">Navigating History</a></li>
+<li><a href="guide-saving-and-restoring-state.html">Saving and Restoring State</a></li>
+<li><a href="guide-responding-to-events.html">Responding to Events</a></li>
+<li><a href="guide-validating-dialogues.html">Validating Dialogues</a></li>
+<li><a href="guide-internationalization.html">Internationalization</a></li>
+</ul>
+<p><strong>API Reference</strong></p>
+<ul>
+<li><a href="api-dialoguerunner.html">DialogueRunner API</a></li>
+<li><a href="api-navigation.html">Navigation API</a></li>
+<li><a href="api-state.html">State API</a></li>
+<li><a href="api-types.html">Types Reference</a></li>
+<li><a href="api-validation.html">Validation API</a></li>
+<li><a href="api-i18n.html">I18n API</a></li>
+<li><a href="api-errors.html">Errors</a></li>
+</ul>
+
+        </nav>
+      </aside>
+
+      <main class="manual-content">
+        <article class="manual-article">
+<h1>Working with Flags</h1>
+<p>Track and modify state during conversations. This guide covers setting flags, using both scopes, and integrating with your game&#39;s state management.</p>
+<h2>Prerequisites</h2>
+<p>Before starting, you should:</p>
+<ul>
+<li><a href="your-first-dialogue.html">Complete Your First Dialogue</a></li>
+</ul>
+<h2>Overview</h2>
+<p>We&#39;ll build a quest dialogue that tracks progress, rewards the player, and remembers conversation state.</p>
+<ol>
+<li>Set flags via actions</li>
+<li>Use game flags for persistent state</li>
+<li>Use conversation flags for dialogue-specific state</li>
+<li>Integrate an external flag store</li>
+</ol>
+<h2>Step 1: Set Flags via Actions</h2>
+<p>Actions in nodes or choices can set, increment, decrement, or clear flags.</p>
+<pre><code class="language-typescript">import { createDialogueRunner, DialogueDefinition } from &#39;@motioneffector/dialogue&#39;
+
+const dialogue: DialogueDefinition = {
+  id: &#39;quest-giver&#39;,
+  startNode: &#39;start&#39;,
+  nodes: {
+    start: {
+      text: &#39;Will you retrieve the ancient artifact?&#39;,
+      choices: [
+        {
+          text: &#39;I accept this quest&#39;,
+          next: &#39;accepted&#39;,
+          actions: [
+            { type: &#39;set&#39;, flag: &#39;quest_artifact&#39;, value: &#39;active&#39; },
+            { type: &#39;increment&#39;, flag: &#39;activeQuests&#39; }
+          ]
+        },
+        {
+          text: &#39;Not right now&#39;,
+          next: &#39;declined&#39;
+        }
+      ]
+    },
+    accepted: {
+      text: &#39;Excellent! Find it in the northern caves.&#39;,
+      isEnd: true
+    },
+    declined: {
+      text: &#39;Return when you\&#39;re ready.&#39;,
+      isEnd: true
+    }
+  }
+}
+</code></pre>
+<h2>Step 2: Use Game Flags for Persistent State</h2>
+<p>Game flags persist across dialogues. Perfect for inventory, quest progress, and player stats.</p>
+<pre><code class="language-typescript">import { createFlagStore } from &#39;@motioneffector/flags&#39;
+
+const gameFlags = createFlagStore()
+gameFlags.set(&#39;gold&#39;, 100)
+gameFlags.set(&#39;playerLevel&#39;, 5)
+
+const runner = createDialogueRunner({ gameFlags })
+await runner.start(dialogue)
+
+// After accepting the quest:
+console.log(gameFlags.get(&#39;quest_artifact&#39;))  // &#39;active&#39;
+console.log(gameFlags.get(&#39;activeQuests&#39;))    // 1
+
+// Start a different dialogue - game flags persist
+await runner.start(anotherDialogue)
+console.log(gameFlags.get(&#39;quest_artifact&#39;))  // Still &#39;active&#39;
+</code></pre>
+<h2>Step 3: Use Conversation Flags for Dialogue State</h2>
+<p>Conversation flags reset when a new dialogue starts. Use them for &quot;have we discussed this topic?&quot; tracking.</p>
+<pre><code class="language-typescript">const dialogue: DialogueDefinition = {
+  id: &#39;informant&#39;,
+  startNode: &#39;start&#39;,
+  nodes: {
+    start: {
+      text: &#39;What do you want to know?&#39;,
+      choices: [
+        {
+          text: &#39;Tell me about the thieves guild&#39;,
+          next: &#39;thieves&#39;,
+          conditions: { not: { check: [&#39;conv:asked_thieves&#39;, &#39;==&#39;, true] } }
+        },
+        {
+          text: &#39;Any news about the thieves guild?&#39;,
+          next: &#39;thieves-update&#39;,
+          conditions: { check: [&#39;conv:asked_thieves&#39;, &#39;==&#39;, true] }
+        },
+        { text: &#39;Nevermind&#39;, next: &#39;end&#39; }
+      ]
+    },
+    thieves: {
+      text: &#39;They operate from the old warehouse...&#39;,
+      actions: [{ type: &#39;set&#39;, flag: &#39;conv:asked_thieves&#39;, value: true }],
+      next: &#39;start&#39;
+    },
+    &#39;thieves-update&#39;: {
+      text: &#39;Nothing new since we last spoke.&#39;,
+      next: &#39;start&#39;
+    },
+    end: { text: &#39;Be careful out there.&#39;, isEnd: true }
+  }
+}
+</code></pre>
+<p>The first time you ask about thieves, you get the full explanation. Ask again in the same conversation, you get the shorter response. Leave and return - the conversation flags reset.</p>
+<h2>Step 4: Integrate External Flag Store</h2>
+<p>For real games, you likely have your own state management. Pass a compatible FlagStore:</p>
+<pre><code class="language-typescript">import { createFlagStore } from &#39;@motioneffector/flags&#39;
+
+// Your game&#39;s central state
+const gameState = createFlagStore()
+
+// Initialize from save data, database, etc.
+gameState.set(&#39;gold&#39;, savedGame.gold)
+gameState.set(&#39;playerName&#39;, savedGame.name)
+
+// Pass to dialogue runner
+const runner = createDialogueRunner({ gameFlags: gameState })
+
+// After dialogues, save your state
+function saveGame() {
+  const data = gameState.all()
+  localStorage.setItem(&#39;save&#39;, JSON.stringify(data))
+}
+</code></pre>
+<h2>Complete Example</h2>
+<pre><code class="language-typescript">import { createDialogueRunner, DialogueDefinition } from &#39;@motioneffector/dialogue&#39;
+import { createFlagStore } from &#39;@motioneffector/flags&#39;
+
+const dialogue: DialogueDefinition = {
+  id: &#39;blacksmith&#39;,
+  startNode: &#39;greeting&#39;,
+  nodes: {
+    greeting: {
+      text: &#39;Welcome to my forge! You have {{gold}} gold.&#39;,
+      choices: [
+        {
+          text: &#39;Buy Iron Sword (50g)&#39;,
+          next: &#39;bought-sword&#39;,
+          conditions: { check: [&#39;gold&#39;, &#39;&gt;=&#39;, 50] },
+          actions: [
+            { type: &#39;decrement&#39;, flag: &#39;gold&#39;, value: 50 },
+            { type: &#39;set&#39;, flag: &#39;hasIronSword&#39;, value: true },
+            { type: &#39;set&#39;, flag: &#39;conv:madePurchase&#39;, value: true }
+          ]
+        },
+        {
+          text: &#39;Upgrade my sword&#39;,
+          next: &#39;upgrade&#39;,
+          conditions: {
+            and: [
+              { check: [&#39;hasIronSword&#39;, &#39;==&#39;, true] },
+              { check: [&#39;gold&#39;, &#39;&gt;=&#39;, 100] }
+            ]
+          }
+        },
+        {
+          text: &#39;Just browsing&#39;,
+          next: &#39;browse&#39;
+        }
+      ]
+    },
+    &#39;bought-sword&#39;: {
+      text: &#39;A fine choice! This blade will serve you well.&#39;,
+      next: &#39;greeting&#39;
+    },
+    upgrade: {
+      text: &#39;I\&#39;ll make this blade even stronger!&#39;,
+      actions: [
+        { type: &#39;decrement&#39;, flag: &#39;gold&#39;, value: 100 },
+        { type: &#39;set&#39;, flag: &#39;hasSteelSword&#39;, value: true },
+        { type: &#39;clear&#39;, flag: &#39;hasIronSword&#39; }
+      ],
+      next: &#39;greeting&#39;
+    },
+    browse: {
+      text: &#39;Take your time. Let me know if you need anything.&#39;,
+      choices: [
+        {
+          text: &#39;Actually, I\&#39;ll buy something&#39;,
+          next: &#39;greeting&#39;,
+          conditions: { not: { check: [&#39;conv:madePurchase&#39;, &#39;==&#39;, true] } }
+        },
+        {
+          text: &#39;Thanks, goodbye&#39;,
+          next: &#39;farewell&#39;
+        }
+      ]
+    },
+    farewell: {
+      text: &#39;Come back when you need quality steel!&#39;,
+      isEnd: true
+    }
+  }
+}
+
+async function main() {
+  const gameFlags = createFlagStore()
+  gameFlags.set(&#39;gold&#39;, 200)
+  gameFlags.set(&#39;playerName&#39;, &#39;Hero&#39;)
+
+  const runner = createDialogueRunner({ gameFlags })
+  await runner.start(dialogue)
+
+  // Simulate gameplay
+  console.log(&#39;Starting gold:&#39;, gameFlags.get(&#39;gold&#39;))
+
+  // After some choices...
+  console.log(&#39;Has sword:&#39;, gameFlags.get(&#39;hasIronSword&#39;))
+  console.log(&#39;Remaining gold:&#39;, gameFlags.get(&#39;gold&#39;))
+}
+</code></pre>
+<h2>Variations</h2>
+<h3>Counter Flags</h3>
+<p>Track counts with increment/decrement:</p>
+<pre><code class="language-typescript">actions: [
+  { type: &#39;increment&#39;, flag: &#39;timesVisited&#39; },
+  { type: &#39;increment&#39;, flag: &#39;reputation&#39;, value: 5 }
+]
+
+// Use in conditions
+conditions: { check: [&#39;timesVisited&#39;, &#39;&gt;=&#39;, 3] }
+</code></pre>
+<h3>Clearing Flags</h3>
+<p>Remove a flag entirely:</p>
+<pre><code class="language-typescript">actions: [
+  { type: &#39;clear&#39;, flag: &#39;temporaryBuff&#39; }
+]
+</code></pre>
+<h3>Reading Flags at Runtime</h3>
+<pre><code class="language-typescript">// Get all conversation flags
+const convFlags = runner.getConversationFlags()
+
+// Clear conversation flags manually
+runner.clearConversationFlags()
+
+// Game flags through your store
+console.log(gameFlags.all())
+</code></pre>
+<h2>Troubleshooting</h2>
+<h3>Flag Value Not Updating</h3>
+<p><strong>Symptom:</strong> Actions run but flag values seem unchanged.</p>
+<p><strong>Cause:</strong> Checking the wrong scope or reading before the action executes.</p>
+<p><strong>Solution:</strong> Remember node actions run on entry. The new value is available immediately after.</p>
+<h3>Conversation Flags Persisting</h3>
+<p><strong>Symptom:</strong> Conversation flags from a previous dialogue appear in a new one.</p>
+<p><strong>Cause:</strong> You haven&#39;t called <code>start()</code> on a new dialogue.</p>
+<p><strong>Solution:</strong> <code>start()</code> clears conversation flags. If you need them cleared manually, call <code>runner.clearConversationFlags()</code>.</p>
+<h2>See Also</h2>
+<ul>
+<li><strong><a href="concept-flags.html">Flags</a></strong> - Understanding the two scopes</li>
+<li><strong><a href="concept-actions.html">Actions</a></strong> - All action types</li>
+<li><strong><a href="guide-dynamic-text.html">Dynamic Text</a></strong> - Displaying flag values in text</li>
+</ul>
+
+        </article>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

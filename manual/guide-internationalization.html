@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Internationalization (i18n) - @motioneffector/dialogue</title>
+  <link rel="stylesheet" href="../demo-files/demo.css">
+  <link rel="stylesheet" href="manual.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <h1 class="header-title">@motioneffector/dialogue</h1>
+      <p class="header-description">Documentation</p>
+      <nav class="header-links">
+        <a href="../index.html" class="header-link">Demo</a>
+        <a href="https://www.npmjs.com/package/@motioneffector/dialogue" class="header-link">npm</a>
+        <a href="https://github.com/motioneffector/dialogue" class="header-link">GitHub</a>
+      </nav>
+    </header>
+
+    <div class="manual-layout">
+      <aside class="manual-sidebar">
+        <nav class="sidebar-nav">
+<p><strong><a href="index.html">@motioneffector/dialogue</a></strong></p>
+<p><strong>Getting Started</strong></p>
+<ul>
+<li><a href="installation.html">Installation</a></li>
+<li><a href="your-first-dialogue.html">Your First Dialogue</a></li>
+</ul>
+<p><strong>Core Concepts</strong></p>
+<ul>
+<li><a href="concept-dialogue-trees.html">Dialogue Trees</a></li>
+<li><a href="concept-dialoguerunner.html">The DialogueRunner</a></li>
+<li><a href="concept-flags.html">Flags</a></li>
+<li><a href="concept-conditions.html">Conditions</a></li>
+<li><a href="concept-actions.html">Actions</a></li>
+</ul>
+<p><strong>Guides</strong></p>
+<ul>
+<li><a href="guide-conditional-choices.html">Conditional Choices</a></li>
+<li><a href="guide-working-with-flags.html">Working with Flags</a></li>
+<li><a href="guide-dynamic-text.html">Dynamic Text</a></li>
+<li><a href="guide-configuring-speakers.html">Configuring Speakers</a></li>
+<li><a href="guide-navigating-history.html">Navigating History</a></li>
+<li><a href="guide-saving-and-restoring-state.html">Saving and Restoring State</a></li>
+<li><a href="guide-responding-to-events.html">Responding to Events</a></li>
+<li><a href="guide-validating-dialogues.html">Validating Dialogues</a></li>
+<li><a href="guide-internationalization.html">Internationalization</a></li>
+</ul>
+<p><strong>API Reference</strong></p>
+<ul>
+<li><a href="api-dialoguerunner.html">DialogueRunner API</a></li>
+<li><a href="api-navigation.html">Navigation API</a></li>
+<li><a href="api-state.html">State API</a></li>
+<li><a href="api-types.html">Types Reference</a></li>
+<li><a href="api-validation.html">Validation API</a></li>
+<li><a href="api-i18n.html">I18n API</a></li>
+<li><a href="api-errors.html">Errors</a></li>
+</ul>
+
+        </nav>
+      </aside>
+
+      <main class="manual-content">
+        <article class="manual-article">
+<h1>Internationalization (i18n)</h1>
+<p>Support multiple languages in your dialogues. Use translation keys instead of literal text, and integrate with your localization system.</p>
+<h2>Prerequisites</h2>
+<p>Before starting, you should:</p>
+<ul>
+<li><a href="your-first-dialogue.html">Complete Your First Dialogue</a></li>
+</ul>
+<h2>Overview</h2>
+<p>We&#39;ll set up i18n integration so dialogues can be translated.</p>
+<ol>
+<li>Create an I18nAdapter</li>
+<li>Use translation keys in dialogues</li>
+<li>Handle fallbacks</li>
+<li>Integrate with @motioneffector/i18n or custom systems</li>
+</ol>
+<h2>Step 1: Create an I18nAdapter</h2>
+<p>The adapter connects the dialogue runner to your translation system:</p>
+<pre><code class="language-typescript">import { createDialogueRunner, I18nAdapter } from &#39;@motioneffector/dialogue&#39;
+
+// Simple adapter for demonstration
+const translations: Record&lt;string, string&gt; = {
+  &#39;dialogue.greeting&#39;: &#39;Hello, traveler!&#39;,
+  &#39;dialogue.farewell&#39;: &#39;Safe journeys!&#39;,
+  &#39;choice.yes&#39;: &#39;Yes&#39;,
+  &#39;choice.no&#39;: &#39;No&#39;
+}
+
+const i18nAdapter: I18nAdapter = {
+  t: (key: string) =&gt; translations[key] || key,
+  hasKey: (key: string) =&gt; key in translations
+}
+
+const runner = createDialogueRunner({ i18n: i18nAdapter })
+</code></pre>
+<h2>Step 2: Use Translation Keys</h2>
+<p>Instead of literal text, use keys that your i18n system resolves:</p>
+<pre><code class="language-typescript">import { DialogueDefinition } from &#39;@motioneffector/dialogue&#39;
+
+const dialogue: DialogueDefinition = {
+  id: &#39;greeting&#39;,
+  startNode: &#39;start&#39;,
+  nodes: {
+    start: {
+      text: &#39;dialogue.greeting&#39;,  // Key, not literal text
+      choices: [
+        { text: &#39;choice.yes&#39;, next: &#39;continue&#39; },
+        { text: &#39;choice.no&#39;, next: &#39;farewell&#39; }
+      ]
+    },
+    continue: {
+      text: &#39;dialogue.continue&#39;,
+      isEnd: true
+    },
+    farewell: {
+      text: &#39;dialogue.farewell&#39;,
+      isEnd: true
+    }
+  }
+}
+
+const state = await runner.start(dialogue)
+console.log(state.currentNode.text)  // &quot;Hello, traveler!&quot;
+</code></pre>
+<h2>Step 3: Handle Fallbacks</h2>
+<p>When <code>hasKey()</code> returns false, the text is treated as literal:</p>
+<pre><code class="language-typescript">const i18nAdapter: I18nAdapter = {
+  t: (key: string) =&gt; {
+    const translated = translations[key]
+    if (translated) return translated
+    console.warn(`Missing translation: ${key}`)
+    return key  // Return key as fallback
+  },
+  hasKey: (key: string) =&gt; key in translations
+}
+
+// Dialogue with mixed keys and literal text
+const dialogue: DialogueDefinition = {
+  id: &#39;mixed&#39;,
+  startNode: &#39;start&#39;,
+  nodes: {
+    start: {
+      text: &#39;dialogue.greeting&#39;,  // Will be translated
+      next: &#39;literal&#39;
+    },
+    literal: {
+      text: &#39;This text has no translation key.&#39;,  // Used as-is
+      isEnd: true
+    }
+  }
+}
+</code></pre>
+<p>The runner calls <code>hasKey()</code> first. If true, it calls <code>t()</code> to translate. If false, it uses the text directly.</p>
+<h2>Step 4: Integrate with @motioneffector/i18n</h2>
+<p>Use the built-in adapter factory:</p>
+<pre><code class="language-typescript">import { createDialogueRunner, createI18nAdapter } from &#39;@motioneffector/dialogue&#39;
+import { createI18n } from &#39;@motioneffector/i18n&#39;
+
+// Set up your i18n instance
+const i18n = createI18n({
+  locale: &#39;en&#39;,
+  messages: {
+    en: {
+      greeting: &#39;Hello!&#39;,
+      farewell: &#39;Goodbye!&#39;
+    },
+    es: {
+      greeting: &#39;¡Hola!&#39;,
+      farewell: &#39;¡Adiós!&#39;
+    }
+  }
+})
+
+// Create adapter from i18n instance
+const adapter = createI18nAdapter(i18n)
+
+// Use in runner
+const runner = createDialogueRunner({ i18n: adapter })
+</code></pre>
+<h2>Complete Example</h2>
+<pre><code class="language-typescript">import { createDialogueRunner, createI18nAdapter, DialogueDefinition, I18nAdapter } from &#39;@motioneffector/dialogue&#39;
+
+// Simulated translation database
+const translations: Record&lt;string, Record&lt;string, string&gt;&gt; = {
+  en: {
+    &#39;shop.greeting&#39;: &#39;Welcome to my shop!&#39;,
+    &#39;shop.buy_prompt&#39;: &#39;Would you like to buy something?&#39;,
+    &#39;shop.thanks&#39;: &#39;Thank you for your purchase!&#39;,
+    &#39;shop.farewell&#39;: &#39;Come back soon!&#39;,
+    &#39;choice.buy&#39;: &#39;Yes, show me your wares&#39;,
+    &#39;choice.browse&#39;: &#39;Just browsing&#39;,
+    &#39;choice.leave&#39;: &#39;No thanks, goodbye&#39;
+  },
+  es: {
+    &#39;shop.greeting&#39;: &#39;¡Bienvenido a mi tienda!&#39;,
+    &#39;shop.buy_prompt&#39;: &#39;¿Te gustaría comprar algo?&#39;,
+    &#39;shop.thanks&#39;: &#39;¡Gracias por tu compra!&#39;,
+    &#39;shop.farewell&#39;: &#39;¡Vuelve pronto!&#39;,
+    &#39;choice.buy&#39;: &#39;Sí, muéstrame tus productos&#39;,
+    &#39;choice.browse&#39;: &#39;Solo estoy mirando&#39;,
+    &#39;choice.leave&#39;: &#39;No gracias, adiós&#39;
+  },
+  ja: {
+    &#39;shop.greeting&#39;: &#39;いらっしゃいませ！&#39;,
+    &#39;shop.buy_prompt&#39;: &#39;何かお買い求めですか？&#39;,
+    &#39;shop.thanks&#39;: &#39;お買い上げありがとうございます！&#39;,
+    &#39;shop.farewell&#39;: &#39;またお越しください！&#39;,
+    &#39;choice.buy&#39;: &#39;はい、商品を見せてください&#39;,
+    &#39;choice.browse&#39;: &#39;見ているだけです&#39;,
+    &#39;choice.leave&#39;: &#39;いいえ、さようなら&#39;
+  }
+}
+
+// Create adapter for a specific locale
+function createLocaleAdapter(locale: string): I18nAdapter {
+  const messages = translations[locale] || translations[&#39;en&#39;]
+
+  return {
+    t: (key: string) =&gt; messages[key] || key,
+    hasKey: (key: string) =&gt; key in messages
+  }
+}
+
+// The dialogue uses only keys
+const shopDialogue: DialogueDefinition = {
+  id: &#39;shop&#39;,
+  startNode: &#39;greeting&#39;,
+  nodes: {
+    greeting: {
+      speaker: &#39;merchant&#39;,
+      text: &#39;shop.greeting&#39;,
+      next: &#39;prompt&#39;
+    },
+    prompt: {
+      speaker: &#39;merchant&#39;,
+      text: &#39;shop.buy_prompt&#39;,
+      choices: [
+        { text: &#39;choice.buy&#39;, next: &#39;thanks&#39; },
+        { text: &#39;choice.browse&#39;, next: &#39;farewell&#39; },
+        { text: &#39;choice.leave&#39;, next: &#39;farewell&#39; }
+      ]
+    },
+    thanks: {
+      speaker: &#39;merchant&#39;,
+      text: &#39;shop.thanks&#39;,
+      next: &#39;farewell&#39;
+    },
+    farewell: {
+      speaker: &#39;merchant&#39;,
+      text: &#39;shop.farewell&#39;,
+      isEnd: true
+    }
+  }
+}
+
+// Run in different languages
+async function demo() {
+  for (const locale of [&#39;en&#39;, &#39;es&#39;, &#39;ja&#39;]) {
+    console.log(`\n--- ${locale.toUpperCase()} ---`)
+
+    const runner = createDialogueRunner({
+      i18n: createLocaleAdapter(locale),
+      speakers: {
+        merchant: { name: locale === &#39;ja&#39; ? &#39;商人&#39; : locale === &#39;es&#39; ? &#39;Mercader&#39; : &#39;Merchant&#39; }
+      }
+    })
+
+    const state = await runner.start(shopDialogue)
+    console.log(state.currentNode.text)
+
+    const choices = runner.getChoices()
+    choices.forEach(c =&gt; console.log(`  - ${c.text}`))
+  }
+}
+
+demo()
+
+// Output:
+// --- EN ---
+// Welcome to my shop!
+// Would you like to buy something?
+//   - Yes, show me your wares
+//   - Just browsing
+//   - No thanks, goodbye
+//
+// --- ES ---
+// ¡Bienvenido a mi tienda!
+// ¿Te gustaría comprar algo?
+//   - Sí, muéstrame tus productos
+//   - Solo estoy mirando
+//   - No gracias, adiós
+//
+// --- JA ---
+// いらっしゃいませ！
+// 何かお買い求めですか？
+//   - はい、商品を見せてください
+//   - 見ているだけです
+//   - いいえ、さようなら
+</code></pre>
+<h2>Variations</h2>
+<h3>Translation Parameters</h3>
+<p>Pass parameters through the adapter:</p>
+<pre><code class="language-typescript">// Your translation system supports parameters
+// &quot;greeting&quot;: &quot;Hello, {{name}}!&quot;
+
+const i18nAdapter: I18nAdapter = {
+  t: (key: string, params?: Record&lt;string, unknown&gt;) =&gt; {
+    let text = translations[key] || key
+    if (params) {
+      for (const [k, v] of Object.entries(params)) {
+        text = text.replace(`{{${k}}}`, String(v))
+      }
+    }
+    return text
+  },
+  hasKey: (key: string) =&gt; key in translations
+}
+</code></pre>
+<h3>Lazy Loading Translations</h3>
+<p>Load translations on demand:</p>
+<pre><code class="language-typescript">const loadedLocales = new Set&lt;string&gt;()
+let currentMessages: Record&lt;string, string&gt; = {}
+
+async function loadLocale(locale: string) {
+  if (!loadedLocales.has(locale)) {
+    const response = await fetch(`/i18n/${locale}.json`)
+    currentMessages = await response.json()
+    loadedLocales.add(locale)
+  }
+}
+
+const i18nAdapter: I18nAdapter = {
+  t: (key) =&gt; currentMessages[key] || key,
+  hasKey: (key) =&gt; key in currentMessages
+}
+</code></pre>
+<h3>Using ICU Message Format</h3>
+<p>Integrate with libraries like <code>intl-messageformat</code>:</p>
+<pre><code class="language-typescript">import { IntlMessageFormat } from &#39;intl-messageformat&#39;
+
+const messages: Record&lt;string, IntlMessageFormat&gt; = {
+  &#39;shop.greeting&#39;: new IntlMessageFormat(&#39;Hello, {name}!&#39;, &#39;en&#39;)
+}
+
+const i18nAdapter: I18nAdapter = {
+  t: (key, params) =&gt; {
+    const message = messages[key]
+    return message ? message.format(params) : key
+  },
+  hasKey: (key) =&gt; key in messages
+}
+</code></pre>
+<h2>Troubleshooting</h2>
+<h3>Translation Key Shown Instead of Text</h3>
+<p><strong>Symptom:</strong> You see &quot;dialogue.greeting&quot; instead of &quot;Hello!&quot;.</p>
+<p><strong>Cause:</strong> Either <code>hasKey()</code> returned false, or the key isn&#39;t in your translations.</p>
+<p><strong>Solution:</strong> Check that the key exists in your translation data and that <code>hasKey()</code> returns true for it.</p>
+<h3>Wrong Language</h3>
+<p><strong>Symptom:</strong> Text appears in wrong language.</p>
+<p><strong>Cause:</strong> Adapter is using the wrong locale&#39;s translations.</p>
+<p><strong>Solution:</strong> Verify your adapter is configured with the correct locale when creating the runner.</p>
+<h2>See Also</h2>
+<ul>
+<li><strong><a href="api-i18n.html">I18n API</a></strong> - createI18nAdapter reference</li>
+<li><strong><a href="api-types.html">Types Reference</a></strong> - I18nAdapter interface</li>
+<li><strong><a href="guide-dynamic-text.html">Dynamic Text</a></strong> - Interpolation works with translated text</li>
+</ul>
+
+        </article>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

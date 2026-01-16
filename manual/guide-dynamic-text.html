@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dynamic Text - @motioneffector/dialogue</title>
+  <link rel="stylesheet" href="../demo-files/demo.css">
+  <link rel="stylesheet" href="manual.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <h1 class="header-title">@motioneffector/dialogue</h1>
+      <p class="header-description">Documentation</p>
+      <nav class="header-links">
+        <a href="../index.html" class="header-link">Demo</a>
+        <a href="https://www.npmjs.com/package/@motioneffector/dialogue" class="header-link">npm</a>
+        <a href="https://github.com/motioneffector/dialogue" class="header-link">GitHub</a>
+      </nav>
+    </header>
+
+    <div class="manual-layout">
+      <aside class="manual-sidebar">
+        <nav class="sidebar-nav">
+<p><strong><a href="index.html">@motioneffector/dialogue</a></strong></p>
+<p><strong>Getting Started</strong></p>
+<ul>
+<li><a href="installation.html">Installation</a></li>
+<li><a href="your-first-dialogue.html">Your First Dialogue</a></li>
+</ul>
+<p><strong>Core Concepts</strong></p>
+<ul>
+<li><a href="concept-dialogue-trees.html">Dialogue Trees</a></li>
+<li><a href="concept-dialoguerunner.html">The DialogueRunner</a></li>
+<li><a href="concept-flags.html">Flags</a></li>
+<li><a href="concept-conditions.html">Conditions</a></li>
+<li><a href="concept-actions.html">Actions</a></li>
+</ul>
+<p><strong>Guides</strong></p>
+<ul>
+<li><a href="guide-conditional-choices.html">Conditional Choices</a></li>
+<li><a href="guide-working-with-flags.html">Working with Flags</a></li>
+<li><a href="guide-dynamic-text.html">Dynamic Text</a></li>
+<li><a href="guide-configuring-speakers.html">Configuring Speakers</a></li>
+<li><a href="guide-navigating-history.html">Navigating History</a></li>
+<li><a href="guide-saving-and-restoring-state.html">Saving and Restoring State</a></li>
+<li><a href="guide-responding-to-events.html">Responding to Events</a></li>
+<li><a href="guide-validating-dialogues.html">Validating Dialogues</a></li>
+<li><a href="guide-internationalization.html">Internationalization</a></li>
+</ul>
+<p><strong>API Reference</strong></p>
+<ul>
+<li><a href="api-dialoguerunner.html">DialogueRunner API</a></li>
+<li><a href="api-navigation.html">Navigation API</a></li>
+<li><a href="api-state.html">State API</a></li>
+<li><a href="api-types.html">Types Reference</a></li>
+<li><a href="api-validation.html">Validation API</a></li>
+<li><a href="api-i18n.html">I18n API</a></li>
+<li><a href="api-errors.html">Errors</a></li>
+</ul>
+
+        </nav>
+      </aside>
+
+      <main class="manual-content">
+        <article class="manual-article">
+<h1>Dynamic Text</h1>
+<p>Display personalized or variable text in dialogues using interpolation. Insert flag values, speaker names, or custom computed values into node text.</p>
+<h2>Prerequisites</h2>
+<p>Before starting, you should:</p>
+<ul>
+<li><a href="your-first-dialogue.html">Complete Your First Dialogue</a></li>
+<li><a href="concept-flags.html">Understand Flags</a></li>
+</ul>
+<h2>Overview</h2>
+<p>We&#39;ll create dialogue with dynamic greetings, status displays, and computed values.</p>
+<ol>
+<li>Use <code>{{flagName}}</code> syntax for basic interpolation</li>
+<li>Access both flag scopes</li>
+<li>Register custom interpolation functions</li>
+<li>Use the special <code>{{speaker}}</code> variable</li>
+</ol>
+<h2>Step 1: Basic Flag Interpolation</h2>
+<p>Wrap flag names in double curly braces to insert their values.</p>
+<pre><code class="language-typescript">import { createDialogueRunner, DialogueDefinition } from &#39;@motioneffector/dialogue&#39;
+import { createFlagStore } from &#39;@motioneffector/flags&#39;
+
+const gameFlags = createFlagStore()
+gameFlags.set(&#39;playerName&#39;, &#39;Aria&#39;)
+gameFlags.set(&#39;gold&#39;, 150)
+
+const dialogue: DialogueDefinition = {
+  id: &#39;greeting&#39;,
+  startNode: &#39;start&#39;,
+  nodes: {
+    start: {
+      text: &#39;Welcome, {{playerName}}! You have {{gold}} gold.&#39;,
+      isEnd: true
+    }
+  }
+}
+
+const runner = createDialogueRunner({ gameFlags })
+const state = await runner.start(dialogue)
+
+console.log(state.currentNode.text)
+// Output: &quot;Welcome, Aria! You have 150 gold.&quot;
+</code></pre>
+<h2>Step 2: Access Both Flag Scopes</h2>
+<p>Use <code>conv:</code> prefix for conversation flags:</p>
+<pre><code class="language-typescript">const dialogue: DialogueDefinition = {
+  id: &#39;count-visits&#39;,
+  startNode: &#39;start&#39;,
+  nodes: {
+    start: {
+      text: &#39;This is visit #{{conv:visitCount}} in our conversation.&#39;,
+      actions: [{ type: &#39;increment&#39;, flag: &#39;conv:visitCount&#39; }],
+      choices: [
+        { text: &#39;Visit again&#39;, next: &#39;start&#39; },
+        { text: &#39;Leave&#39;, next: &#39;end&#39; }
+      ]
+    },
+    end: { text: &#39;Goodbye!&#39;, isEnd: true }
+  }
+}
+</code></pre>
+<p>Each time you loop back to start, the count increases.</p>
+<h2>Step 3: Custom Interpolation Functions</h2>
+<p>Register functions that compute values dynamically:</p>
+<pre><code class="language-typescript">const runner = createDialogueRunner({
+  gameFlags,
+  interpolation: {
+    time: () =&gt; {
+      const hour = new Date().getHours()
+      if (hour &lt; 12) return &#39;morning&#39;
+      if (hour &lt; 18) return &#39;afternoon&#39;
+      return &#39;evening&#39;
+    },
+    healthStatus: (context) =&gt; {
+      const health = context.gameFlags.get(&#39;health&#39;) as number
+      if (health &gt; 75) return &#39;healthy&#39;
+      if (health &gt; 25) return &#39;wounded&#39;
+      return &#39;critical&#39;
+    }
+  }
+})
+
+const dialogue: DialogueDefinition = {
+  id: &#39;healer&#39;,
+  startNode: &#39;start&#39;,
+  nodes: {
+    start: {
+      text: &#39;Good {{time}}, traveler. You look {{healthStatus}}.&#39;,
+      isEnd: true
+    }
+  }
+}
+
+// Output (at 3pm, with health=50):
+// &quot;Good afternoon, traveler. You look wounded.&quot;
+</code></pre>
+<h3>Context Object</h3>
+<p>Custom interpolation functions receive a context object:</p>
+<pre><code class="language-typescript">interface InterpolationContext {
+  currentNode: NodeDefinition
+  speaker?: Speaker
+  gameFlags: FlagStore
+  conversationFlags: FlagStore
+}
+</code></pre>
+<h3>Async Functions</h3>
+<p>Interpolation functions can be async:</p>
+<pre><code class="language-typescript">interpolation: {
+  weatherReport: async () =&gt; {
+    const response = await fetch(&#39;/api/weather&#39;)
+    const data = await response.json()
+    return data.condition
+  }
+}
+</code></pre>
+<h2>Step 4: Speaker Interpolation</h2>
+<p>Use <code>{{speaker}}</code> to insert the current speaker&#39;s name:</p>
+<pre><code class="language-typescript">const runner = createDialogueRunner({
+  speakers: {
+    guard: { name: &#39;Captain Reynolds&#39; },
+    merchant: { name: &#39;Old Tom&#39; }
+  }
+})
+
+const dialogue: DialogueDefinition = {
+  id: &#39;intro&#39;,
+  startNode: &#39;guard-speaks&#39;,
+  nodes: {
+    &#39;guard-speaks&#39;: {
+      speaker: &#39;guard&#39;,
+      text: &#39;I am {{speaker}}, captain of the guard.&#39;,
+      next: &#39;merchant-speaks&#39;
+    },
+    &#39;merchant-speaks&#39;: {
+      speaker: &#39;merchant&#39;,
+      text: &#39;And I am {{speaker}}. What can I do for you?&#39;,
+      isEnd: true
+    }
+  }
+}
+
+// Outputs:
+// &quot;I am Captain Reynolds, captain of the guard.&quot;
+// &quot;And I am Old Tom. What can I do for you?&quot;
+</code></pre>
+<h2>Complete Example</h2>
+<pre><code class="language-typescript">import { createDialogueRunner, DialogueDefinition } from &#39;@motioneffector/dialogue&#39;
+import { createFlagStore } from &#39;@motioneffector/flags&#39;
+
+const gameFlags = createFlagStore()
+gameFlags.set(&#39;playerName&#39;, &#39;Kira&#39;)
+gameFlags.set(&#39;gold&#39;, 500)
+gameFlags.set(&#39;reputation&#39;, 75)
+gameFlags.set(&#39;questsCompleted&#39;, 12)
+
+const runner = createDialogueRunner({
+  gameFlags,
+  speakers: {
+    guildmaster: { name: &#39;Master Aldric&#39; }
+  },
+  interpolation: {
+    rank: (ctx) =&gt; {
+      const rep = ctx.gameFlags.get(&#39;reputation&#39;) as number
+      if (rep &gt;= 100) return &#39;Legend&#39;
+      if (rep &gt;= 75) return &#39;Veteran&#39;
+      if (rep &gt;= 50) return &#39;Journeyman&#39;
+      return &#39;Novice&#39;
+    },
+    greeting: () =&gt; {
+      const hour = new Date().getHours()
+      if (hour &lt; 12) return &#39;Good morning&#39;
+      if (hour &lt; 18) return &#39;Good afternoon&#39;
+      return &#39;Good evening&#39;
+    }
+  }
+})
+
+const dialogue: DialogueDefinition = {
+  id: &#39;guild-status&#39;,
+  startNode: &#39;status&#39;,
+  nodes: {
+    status: {
+      speaker: &#39;guildmaster&#39;,
+      text: &#39;{{greeting}}, {{playerName}}! As a {{rank}}, you\&#39;ve completed {{questsCompleted}} quests and earned {{gold}} gold. I am {{speaker}}, and I\&#39;m proud of your progress.&#39;,
+      isEnd: true
+    }
+  }
+}
+
+const state = await runner.start(dialogue)
+console.log(state.currentNode.text)
+// &quot;Good afternoon, Kira! As a Veteran, you&#39;ve completed 12 quests and earned 500 gold. I am Master Aldric, and I&#39;m proud of your progress.&quot;
+</code></pre>
+<h2>Variations</h2>
+<h3>Missing Flags</h3>
+<p>Missing flags interpolate to empty string:</p>
+<pre><code class="language-typescript">text: &#39;Hello {{unknownFlag}}!&#39;
+// Output: &quot;Hello !&quot;
+</code></pre>
+<h3>Multiple Interpolations</h3>
+<p>Combine as many as needed:</p>
+<pre><code class="language-typescript">text: &#39;{{playerName}} the {{playerClass}}: {{health}}/{{maxHealth}} HP, {{mana}}/{{maxMana}} MP&#39;
+</code></pre>
+<h3>Computed Display Values</h3>
+<p>Use custom functions to format values:</p>
+<pre><code class="language-typescript">interpolation: {
+  goldFormatted: (ctx) =&gt; {
+    const gold = ctx.gameFlags.get(&#39;gold&#39;) as number
+    return gold.toLocaleString()  // &quot;1,234&quot;
+  },
+  healthBar: (ctx) =&gt; {
+    const health = ctx.gameFlags.get(&#39;health&#39;) as number
+    const maxHealth = ctx.gameFlags.get(&#39;maxHealth&#39;) as number
+    const bars = Math.round((health / maxHealth) * 10)
+    return &#39;█&#39;.repeat(bars) + &#39;░&#39;.repeat(10 - bars)
+  }
+}
+</code></pre>
+<h2>Troubleshooting</h2>
+<h3>Value Shows as Empty</h3>
+<p><strong>Symptom:</strong> <code>{{flagName}}</code> renders as nothing.</p>
+<p><strong>Cause:</strong> Flag doesn&#39;t exist or is undefined.</p>
+<p><strong>Solution:</strong> Set the flag before starting dialogue, or check your flag name spelling.</p>
+<h3>Custom Function Not Called</h3>
+<p><strong>Symptom:</strong> <code>{{custom}}</code> shows literally instead of computed value.</p>
+<p><strong>Cause:</strong> Function name not registered in interpolation options.</p>
+<p><strong>Solution:</strong> Verify the function is registered when creating the runner:</p>
+<pre><code class="language-typescript">const runner = createDialogueRunner({
+  interpolation: {
+    custom: () =&gt; &#39;value&#39;  // Must match {{custom}}
+  }
+})
+</code></pre>
+<h2>See Also</h2>
+<ul>
+<li><strong><a href="concept-flags.html">Flags</a></strong> - Understanding flag values</li>
+<li><strong><a href="guide-configuring-speakers.html">Configuring Speakers</a></strong> - Setting up speaker names</li>
+<li><strong><a href="api-types.html">Types Reference</a></strong> - InterpolationContext interface</li>
+</ul>
+
+        </article>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

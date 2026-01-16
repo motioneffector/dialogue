@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Navigation API - @motioneffector/dialogue</title>
+  <link rel="stylesheet" href="../demo-files/demo.css">
+  <link rel="stylesheet" href="manual.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <h1 class="header-title">@motioneffector/dialogue</h1>
+      <p class="header-description">Documentation</p>
+      <nav class="header-links">
+        <a href="../index.html" class="header-link">Demo</a>
+        <a href="https://www.npmjs.com/package/@motioneffector/dialogue" class="header-link">npm</a>
+        <a href="https://github.com/motioneffector/dialogue" class="header-link">GitHub</a>
+      </nav>
+    </header>
+
+    <div class="manual-layout">
+      <aside class="manual-sidebar">
+        <nav class="sidebar-nav">
+<p><strong><a href="index.html">@motioneffector/dialogue</a></strong></p>
+<p><strong>Getting Started</strong></p>
+<ul>
+<li><a href="installation.html">Installation</a></li>
+<li><a href="your-first-dialogue.html">Your First Dialogue</a></li>
+</ul>
+<p><strong>Core Concepts</strong></p>
+<ul>
+<li><a href="concept-dialogue-trees.html">Dialogue Trees</a></li>
+<li><a href="concept-dialoguerunner.html">The DialogueRunner</a></li>
+<li><a href="concept-flags.html">Flags</a></li>
+<li><a href="concept-conditions.html">Conditions</a></li>
+<li><a href="concept-actions.html">Actions</a></li>
+</ul>
+<p><strong>Guides</strong></p>
+<ul>
+<li><a href="guide-conditional-choices.html">Conditional Choices</a></li>
+<li><a href="guide-working-with-flags.html">Working with Flags</a></li>
+<li><a href="guide-dynamic-text.html">Dynamic Text</a></li>
+<li><a href="guide-configuring-speakers.html">Configuring Speakers</a></li>
+<li><a href="guide-navigating-history.html">Navigating History</a></li>
+<li><a href="guide-saving-and-restoring-state.html">Saving and Restoring State</a></li>
+<li><a href="guide-responding-to-events.html">Responding to Events</a></li>
+<li><a href="guide-validating-dialogues.html">Validating Dialogues</a></li>
+<li><a href="guide-internationalization.html">Internationalization</a></li>
+</ul>
+<p><strong>API Reference</strong></p>
+<ul>
+<li><a href="api-dialoguerunner.html">DialogueRunner API</a></li>
+<li><a href="api-navigation.html">Navigation API</a></li>
+<li><a href="api-state.html">State API</a></li>
+<li><a href="api-types.html">Types Reference</a></li>
+<li><a href="api-validation.html">Validation API</a></li>
+<li><a href="api-i18n.html">I18n API</a></li>
+<li><a href="api-errors.html">Errors</a></li>
+</ul>
+
+        </nav>
+      </aside>
+
+      <main class="manual-content">
+        <article class="manual-article">
+<h1>Navigation API</h1>
+<p>Methods for navigating dialogue history and moving between nodes.</p>
+<hr>
+<h2><code>runner.getHistory()</code></h2>
+<p>Returns the history of visited nodes with choice and flag data.</p>
+<p><strong>Signature:</strong></p>
+<pre><code class="language-typescript">getHistory(): HistoryEntry[]
+</code></pre>
+<p><strong>Returns:</strong> <code>HistoryEntry[]</code> — Array of history entries in chronological order.</p>
+<p><strong>Example:</strong></p>
+<pre><code class="language-typescript">const history = runner.getHistory()
+
+history.forEach((entry, index) =&gt; {
+  console.log(`${index + 1}. Node: ${entry.nodeId}`)
+  if (entry.choice) {
+    console.log(`   Choice: ${entry.choice.text}`)
+  }
+  console.log(`   Time: ${new Date(entry.timestamp).toISOString()}`)
+})
+</code></pre>
+<hr>
+<h2><code>runner.back()</code></h2>
+<p>Returns to the previous node and restores conversation flags to their state at that point.</p>
+<p><strong>Signature:</strong></p>
+<pre><code class="language-typescript">back(): Promise&lt;void&gt;
+</code></pre>
+<p><strong>Returns:</strong> <code>Promise&lt;void&gt;</code></p>
+<p><strong>Example:</strong></p>
+<pre><code class="language-typescript">await runner.start(dialogue)
+await runner.choose(0)  // Move to next node
+
+console.log(runner.getHistory().length)  // 1
+
+await runner.back()  // Return to previous node
+
+console.log(runner.getHistory().length)  // 0
+console.log(runner.getCurrentNode()?.text)  // Original node
+</code></pre>
+<p><strong>Notes:</strong></p>
+<ul>
+<li>Does nothing if history is empty</li>
+<li>Restores conversation flags from the history snapshot</li>
+<li>Fires <code>onNodeEnter</code> for the restored node</li>
+<li>Does not restore game flags (those are persistent)</li>
+</ul>
+<hr>
+<h2><code>runner.restart()</code></h2>
+<p>Restarts the dialogue from the start node, clearing history.</p>
+<p><strong>Signature:</strong></p>
+<pre><code class="language-typescript">restart(options?: RestartOptions): Promise&lt;DialogueState&gt;
+</code></pre>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>options</code></td>
+<td><code>RestartOptions</code></td>
+<td>No</td>
+<td>Options for restart behavior</td>
+</tr>
+</tbody></table>
+<p><strong>Returns:</strong> <code>Promise&lt;DialogueState&gt;</code> — The initial state after restart.</p>
+<p><strong>Example:</strong></p>
+<pre><code class="language-typescript">// Standard restart - clears history and conversation flags
+await runner.restart()
+
+// Preserve conversation flags
+await runner.restart({ preserveConversationFlags: true })
+</code></pre>
+<p><strong>Throws:</strong></p>
+<ul>
+<li><code>ValidationError</code> — When no active dialogue</li>
+</ul>
+<hr>
+<h2><code>runner.jumpTo()</code></h2>
+<p>Jumps directly to a specific node, adding the current node to history.</p>
+<p><strong>Signature:</strong></p>
+<pre><code class="language-typescript">jumpTo(nodeId: string): Promise&lt;void&gt;
+</code></pre>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>nodeId</code></td>
+<td><code>string</code></td>
+<td>Yes</td>
+<td>ID of the node to jump to</td>
+</tr>
+</tbody></table>
+<p><strong>Returns:</strong> <code>Promise&lt;void&gt;</code></p>
+<p><strong>Example:</strong></p>
+<pre><code class="language-typescript">await runner.start(dialogue)
+
+// Jump to a specific node
+await runner.jumpTo(&#39;secret-ending&#39;)
+
+console.log(runner.getCurrentNode()?.text)  // Secret ending text
+console.log(runner.getHistory().length)     // 1 (jump was recorded)
+</code></pre>
+<p><strong>Throws:</strong></p>
+<ul>
+<li><code>ValidationError</code> — When no active dialogue</li>
+<li><code>ValidationError</code> — When target node does not exist</li>
+</ul>
+<p><strong>Notes:</strong></p>
+<ul>
+<li>Adds the previous node to history (enables <code>back()</code>)</li>
+<li>Fires <code>onNodeExit</code> for the previous node</li>
+<li>Fires <code>onNodeEnter</code> for the target node</li>
+<li>Does not execute node actions on the target (unlike normal transitions)</li>
+</ul>
+<hr>
+<h2>Types</h2>
+<h3><code>HistoryEntry</code></h3>
+<pre><code class="language-typescript">interface HistoryEntry {
+  nodeId: string
+  node: NodeDefinition
+  choiceIndex?: number
+  choice?: ChoiceDefinition
+  timestamp: number
+  conversationFlags: Record&lt;string, FlagValue&gt;
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>nodeId</code></td>
+<td><code>string</code></td>
+<td>ID of the visited node</td>
+</tr>
+<tr>
+<td><code>node</code></td>
+<td><code>NodeDefinition</code></td>
+<td>Full node definition</td>
+</tr>
+<tr>
+<td><code>choiceIndex</code></td>
+<td><code>number</code></td>
+<td>Index of choice made (if any)</td>
+</tr>
+<tr>
+<td><code>choice</code></td>
+<td><code>ChoiceDefinition</code></td>
+<td>Full choice definition (if any)</td>
+</tr>
+<tr>
+<td><code>timestamp</code></td>
+<td><code>number</code></td>
+<td>Unix timestamp when node was visited</td>
+</tr>
+<tr>
+<td><code>conversationFlags</code></td>
+<td><code>Record&lt;string, FlagValue&gt;</code></td>
+<td>Snapshot of conversation flags at this point</td>
+</tr>
+</tbody></table>
+<h3><code>RestartOptions</code></h3>
+<pre><code class="language-typescript">interface RestartOptions {
+  preserveConversationFlags?: boolean
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>preserveConversationFlags</code></td>
+<td><code>boolean</code></td>
+<td>Keep conversation flags on restart. Default: <code>false</code></td>
+</tr>
+</tbody></table>
+
+        </article>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

@@ -20,7 +20,7 @@ A lightweight, type-safe branching dialogue system for games and interactive fic
 - **I18n Support** - Built-in internationalization adapter interface
 - **Validation** - Comprehensive dialogue structure checking
 
-[Read the full manual →](https://github.com/motioneffector/dialogue/wiki)
+[Read the full manual →](https://motioneffector.github.io/dialogue/manual/)
 
 ## Quick Start
 

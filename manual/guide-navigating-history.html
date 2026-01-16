@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Navigating History - @motioneffector/dialogue</title>
+  <link rel="stylesheet" href="../demo-files/demo.css">
+  <link rel="stylesheet" href="manual.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <h1 class="header-title">@motioneffector/dialogue</h1>
+      <p class="header-description">Documentation</p>
+      <nav class="header-links">
+        <a href="../index.html" class="header-link">Demo</a>
+        <a href="https://www.npmjs.com/package/@motioneffector/dialogue" class="header-link">npm</a>
+        <a href="https://github.com/motioneffector/dialogue" class="header-link">GitHub</a>
+      </nav>
+    </header>
+
+    <div class="manual-layout">
+      <aside class="manual-sidebar">
+        <nav class="sidebar-nav">
+<p><strong><a href="index.html">@motioneffector/dialogue</a></strong></p>
+<p><strong>Getting Started</strong></p>
+<ul>
+<li><a href="installation.html">Installation</a></li>
+<li><a href="your-first-dialogue.html">Your First Dialogue</a></li>
+</ul>
+<p><strong>Core Concepts</strong></p>
+<ul>
+<li><a href="concept-dialogue-trees.html">Dialogue Trees</a></li>
+<li><a href="concept-dialoguerunner.html">The DialogueRunner</a></li>
+<li><a href="concept-flags.html">Flags</a></li>
+<li><a href="concept-conditions.html">Conditions</a></li>
+<li><a href="concept-actions.html">Actions</a></li>
+</ul>
+<p><strong>Guides</strong></p>
+<ul>
+<li><a href="guide-conditional-choices.html">Conditional Choices</a></li>
+<li><a href="guide-working-with-flags.html">Working with Flags</a></li>
+<li><a href="guide-dynamic-text.html">Dynamic Text</a></li>
+<li><a href="guide-configuring-speakers.html">Configuring Speakers</a></li>
+<li><a href="guide-navigating-history.html">Navigating History</a></li>
+<li><a href="guide-saving-and-restoring-state.html">Saving and Restoring State</a></li>
+<li><a href="guide-responding-to-events.html">Responding to Events</a></li>
+<li><a href="guide-validating-dialogues.html">Validating Dialogues</a></li>
+<li><a href="guide-internationalization.html">Internationalization</a></li>
+</ul>
+<p><strong>API Reference</strong></p>
+<ul>
+<li><a href="api-dialoguerunner.html">DialogueRunner API</a></li>
+<li><a href="api-navigation.html">Navigation API</a></li>
+<li><a href="api-state.html">State API</a></li>
+<li><a href="api-types.html">Types Reference</a></li>
+<li><a href="api-validation.html">Validation API</a></li>
+<li><a href="api-i18n.html">I18n API</a></li>
+<li><a href="api-errors.html">Errors</a></li>
+</ul>
+
+        </nav>
+      </aside>
+
+      <main class="manual-content">
+        <article class="manual-article">
+<h1>Navigating History</h1>
+<p>Let players go back, restart, or jump to specific nodes in a dialogue. The runner tracks every node visited, enabling undo, replay, and non-linear navigation.</p>
+<h2>Prerequisites</h2>
+<p>Before starting, you should:</p>
+<ul>
+<li><a href="your-first-dialogue.html">Complete Your First Dialogue</a></li>
+</ul>
+<h2>Overview</h2>
+<p>We&#39;ll implement back/undo functionality, restart options, and debug navigation.</p>
+<ol>
+<li>View the history stack</li>
+<li>Go back to previous nodes</li>
+<li>Restart the dialogue</li>
+<li>Jump to arbitrary nodes</li>
+</ol>
+<h2>Step 1: View History</h2>
+<p>Every choice creates a history entry. Use <code>getHistory()</code> to see the path taken:</p>
+<pre><code class="language-typescript">import { createDialogueRunner, DialogueDefinition } from &#39;@motioneffector/dialogue&#39;
+
+const dialogue: DialogueDefinition = {
+  id: &#39;journey&#39;,
+  startNode: &#39;start&#39;,
+  nodes: {
+    start: {
+      text: &#39;You stand at a crossroads.&#39;,
+      choices: [
+        { text: &#39;Go north&#39;, next: &#39;forest&#39; },
+        { text: &#39;Go south&#39;, next: &#39;village&#39; }
+      ]
+    },
+    forest: {
+      text: &#39;You enter a dark forest.&#39;,
+      choices: [{ text: &#39;Continue&#39;, next: &#39;clearing&#39; }]
+    },
+    clearing: {
+      text: &#39;You find a peaceful clearing.&#39;,
+      isEnd: true
+    },
+    village: {
+      text: &#39;You reach a small village.&#39;,
+      isEnd: true
+    }
+  }
+}
+
+const runner = createDialogueRunner()
+await runner.start(dialogue)
+
+await runner.choose(0)  // Go north
+await runner.choose(0)  // Continue
+
+const history = runner.getHistory()
+console.log(history.length)  // 2
+
+history.forEach(entry =&gt; {
+  console.log(`Node: ${entry.nodeId}, Choice: ${entry.choice?.text}`)
+})
+// Node: start, Choice: Go north
+// Node: forest, Choice: Continue
+</code></pre>
+<h2>Step 2: Go Back</h2>
+<p>Use <code>back()</code> to return to the previous node. This also restores conversation flags to their state at that point.</p>
+<pre><code class="language-typescript">const runner = createDialogueRunner()
+await runner.start(dialogue)
+
+console.log(runner.getCurrentNode()?.text)  // &quot;You stand at a crossroads.&quot;
+
+await runner.choose(0)  // Go north
+console.log(runner.getCurrentNode()?.text)  // &quot;You enter a dark forest.&quot;
+
+await runner.back()
+console.log(runner.getCurrentNode()?.text)  // &quot;You stand at a crossroads.&quot;
+
+// History is also restored
+console.log(runner.getHistory().length)  // 0
+</code></pre>
+<h3>Implementing an Undo Button</h3>
+<pre><code class="language-typescript">function handleUndo() {
+  if (runner.getHistory().length &gt; 0) {
+    runner.back()
+    updateUI()
+  } else {
+    console.log(&#39;Nothing to undo&#39;)
+  }
+}
+</code></pre>
+<h2>Step 3: Restart the Dialogue</h2>
+<p>Use <code>restart()</code> to return to the start node and clear history:</p>
+<pre><code class="language-typescript">await runner.start(dialogue)
+await runner.choose(0)
+await runner.choose(0)
+
+console.log(runner.getHistory().length)  // 2
+console.log(runner.getCurrentNode()?.text)  // &quot;You find a peaceful clearing.&quot;
+
+await runner.restart()
+
+console.log(runner.getHistory().length)  // 0
+console.log(runner.getCurrentNode()?.text)  // &quot;You stand at a crossroads.&quot;
+</code></pre>
+<h3>Preserving Conversation Flags</h3>
+<p>By default, <code>restart()</code> clears conversation flags. To keep them:</p>
+<pre><code class="language-typescript">await runner.restart({ preserveConversationFlags: true })
+</code></pre>
+<h2>Step 4: Jump to Any Node</h2>
+<p>Use <code>jumpTo()</code> for non-linear navigation (debugging, cheats, or special game mechanics):</p>
+<pre><code class="language-typescript">await runner.start(dialogue)
+await runner.jumpTo(&#39;clearing&#39;)
+
+console.log(runner.getCurrentNode()?.text)  // &quot;You find a peaceful clearing.&quot;
+
+// Jump adds to history
+console.log(runner.getHistory().length)  // 1
+</code></pre>
+<h2>Complete Example</h2>
+<pre><code class="language-typescript">import { createDialogueRunner, DialogueDefinition } from &#39;@motioneffector/dialogue&#39;
+
+const dialogue: DialogueDefinition = {
+  id: &#39;demo&#39;,
+  startNode: &#39;intro&#39;,
+  nodes: {
+    intro: {
+      text: &#39;Welcome! This demonstrates history navigation.&#39;,
+      next: &#39;menu&#39;
+    },
+    menu: {
+      text: &#39;What would you like to do?&#39;,
+      choices: [
+        { text: &#39;Explore path A&#39;, next: &#39;pathA&#39; },
+        { text: &#39;Explore path B&#39;, next: &#39;pathB&#39; }
+      ]
+    },
+    pathA: {
+      text: &#39;You chose path A.&#39;,
+      actions: [{ type: &#39;set&#39;, flag: &#39;conv:visited_A&#39;, value: true }],
+      choices: [{ text: &#39;Continue&#39;, next: &#39;endA&#39; }]
+    },
+    pathB: {
+      text: &#39;You chose path B.&#39;,
+      actions: [{ type: &#39;set&#39;, flag: &#39;conv:visited_B&#39;, value: true }],
+      choices: [{ text: &#39;Continue&#39;, next: &#39;endB&#39; }]
+    },
+    endA: { text: &#39;Path A complete!&#39;, isEnd: true },
+    endB: { text: &#39;Path B complete!&#39;, isEnd: true }
+  }
+}
+
+async function demo() {
+  const runner = createDialogueRunner()
+  await runner.start(dialogue)
+
+  console.log(&#39;--- Starting dialogue ---&#39;)
+  console.log(runner.getCurrentNode()?.text)
+
+  // Auto-advance through intro
+  console.log(runner.getCurrentNode()?.text)  // Menu
+
+  // Choose path A
+  await runner.choose(0)
+  console.log(runner.getCurrentNode()?.text)  // Path A
+  console.log(&#39;Visited A:&#39;, runner.getConversationFlags()[&#39;visited_A&#39;])
+
+  // Go back and try path B instead
+  await runner.back()
+  console.log(&#39;After back:&#39;, runner.getCurrentNode()?.text)  // Menu
+  console.log(&#39;Visited A after back:&#39;, runner.getConversationFlags()[&#39;visited_A&#39;])  // undefined (restored)
+
+  await runner.choose(1)  // Path B
+  console.log(runner.getCurrentNode()?.text)  // Path B
+
+  // View full history
+  console.log(&#39;\n--- History ---&#39;)
+  runner.getHistory().forEach((entry, i) =&gt; {
+    console.log(`${i + 1}. ${entry.nodeId} → ${entry.choice?.text || &#39;(auto)&#39;}`)
+  })
+
+  // Restart
+  await runner.restart()
+  console.log(&#39;\nAfter restart:&#39;, runner.getCurrentNode()?.text)
+  console.log(&#39;History length:&#39;, runner.getHistory().length)  // 0
+}
+
+demo()
+</code></pre>
+<h2>Variations</h2>
+<h3>History Entry Data</h3>
+<p>Each history entry contains:</p>
+<pre><code class="language-typescript">interface HistoryEntry {
+  nodeId: string              // The node that was visited
+  node: NodeDefinition        // Full node data
+  choiceIndex?: number        // Which choice was selected (if any)
+  choice?: ChoiceDefinition   // Full choice data
+  timestamp: number           // When this happened
+  conversationFlags: Record&lt;string, FlagValue&gt;  // Flag snapshot
+}
+</code></pre>
+<h3>Using Timestamps</h3>
+<pre><code class="language-typescript">const history = runner.getHistory()
+const duration = Date.now() - history[0].timestamp
+console.log(`Dialogue took ${duration}ms so far`)
+</code></pre>
+<h3>History for Analytics</h3>
+<pre><code class="language-typescript">function trackDialogueCompletion() {
+  const history = runner.getHistory()
+  const path = history.map(e =&gt; e.nodeId).join(&#39; → &#39;)
+  analytics.track(&#39;dialogue_complete&#39;, { path })
+}
+</code></pre>
+<h2>Troubleshooting</h2>
+<h3>Back Does Nothing</h3>
+<p><strong>Symptom:</strong> Calling <code>back()</code> has no effect.</p>
+<p><strong>Cause:</strong> History is empty (at start node).</p>
+<p><strong>Solution:</strong> Check <code>getHistory().length &gt; 0</code> before calling <code>back()</code>.</p>
+<h3>Jump Fails</h3>
+<p><strong>Symptom:</strong> <code>jumpTo()</code> throws an error.</p>
+<p><strong>Cause:</strong> Node ID doesn&#39;t exist in the dialogue.</p>
+<p><strong>Solution:</strong> Verify the node ID matches exactly (case-sensitive).</p>
+<h2>See Also</h2>
+<ul>
+<li><strong><a href="guide-saving-and-restoring-state.html">Saving and Restoring State</a></strong> - Persist history across sessions</li>
+<li><strong><a href="api-navigation.html">Navigation API</a></strong> - Method reference</li>
+<li><strong><a href="api-types.html">Types Reference</a></strong> - HistoryEntry interface</li>
+</ul>
+
+        </article>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

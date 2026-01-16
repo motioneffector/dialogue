@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Errors - @motioneffector/dialogue</title>
+  <link rel="stylesheet" href="../demo-files/demo.css">
+  <link rel="stylesheet" href="manual.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <h1 class="header-title">@motioneffector/dialogue</h1>
+      <p class="header-description">Documentation</p>
+      <nav class="header-links">
+        <a href="../index.html" class="header-link">Demo</a>
+        <a href="https://www.npmjs.com/package/@motioneffector/dialogue" class="header-link">npm</a>
+        <a href="https://github.com/motioneffector/dialogue" class="header-link">GitHub</a>
+      </nav>
+    </header>
+
+    <div class="manual-layout">
+      <aside class="manual-sidebar">
+        <nav class="sidebar-nav">
+<p><strong><a href="index.html">@motioneffector/dialogue</a></strong></p>
+<p><strong>Getting Started</strong></p>
+<ul>
+<li><a href="installation.html">Installation</a></li>
+<li><a href="your-first-dialogue.html">Your First Dialogue</a></li>
+</ul>
+<p><strong>Core Concepts</strong></p>
+<ul>
+<li><a href="concept-dialogue-trees.html">Dialogue Trees</a></li>
+<li><a href="concept-dialoguerunner.html">The DialogueRunner</a></li>
+<li><a href="concept-flags.html">Flags</a></li>
+<li><a href="concept-conditions.html">Conditions</a></li>
+<li><a href="concept-actions.html">Actions</a></li>
+</ul>
+<p><strong>Guides</strong></p>
+<ul>
+<li><a href="guide-conditional-choices.html">Conditional Choices</a></li>
+<li><a href="guide-working-with-flags.html">Working with Flags</a></li>
+<li><a href="guide-dynamic-text.html">Dynamic Text</a></li>
+<li><a href="guide-configuring-speakers.html">Configuring Speakers</a></li>
+<li><a href="guide-navigating-history.html">Navigating History</a></li>
+<li><a href="guide-saving-and-restoring-state.html">Saving and Restoring State</a></li>
+<li><a href="guide-responding-to-events.html">Responding to Events</a></li>
+<li><a href="guide-validating-dialogues.html">Validating Dialogues</a></li>
+<li><a href="guide-internationalization.html">Internationalization</a></li>
+</ul>
+<p><strong>API Reference</strong></p>
+<ul>
+<li><a href="api-dialoguerunner.html">DialogueRunner API</a></li>
+<li><a href="api-navigation.html">Navigation API</a></li>
+<li><a href="api-state.html">State API</a></li>
+<li><a href="api-types.html">Types Reference</a></li>
+<li><a href="api-validation.html">Validation API</a></li>
+<li><a href="api-i18n.html">I18n API</a></li>
+<li><a href="api-errors.html">Errors</a></li>
+</ul>
+
+        </nav>
+      </aside>
+
+      <main class="manual-content">
+        <article class="manual-article">
+<h1>Errors</h1>
+<p>Error classes thrown by the library for handling failures.</p>
+<hr>
+<h2><code>DialogueError</code></h2>
+<p>Base error class for all dialogue-related errors.</p>
+<p><strong>Signature:</strong></p>
+<pre><code class="language-typescript">class DialogueError extends Error {
+  constructor(message: string)
+  name: &#39;DialogueError&#39;
+}
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-typescript">import { DialogueError } from &#39;@motioneffector/dialogue&#39;
+
+try {
+  await runner.choose(999)
+} catch (error) {
+  if (error instanceof DialogueError) {
+    console.error(&#39;Dialogue error:&#39;, error.message)
+  }
+}
+</code></pre>
+<hr>
+<h2><code>ValidationError</code></h2>
+<p>Thrown when validation fails, including invalid arguments and state.</p>
+<p><strong>Signature:</strong></p>
+<pre><code class="language-typescript">class ValidationError extends DialogueError {
+  constructor(message: string, field?: string)
+  name: &#39;ValidationError&#39;
+  field?: string  // The field that failed validation
+}
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-typescript">import { ValidationError } from &#39;@motioneffector/dialogue&#39;
+
+try {
+  await runner.start(dialogue)
+} catch (error) {
+  if (error instanceof ValidationError) {
+    console.error(`Validation failed: ${error.message}`)
+    if (error.field) {
+      console.error(`Field: ${error.field}`)
+    }
+  }
+}
+</code></pre>
+<p><strong>Common Causes:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Message</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Missing start node</td>
+<td><code>Start node not found: nodeId</code></td>
+</tr>
+<tr>
+<td>Invalid choice index</td>
+<td><code>Invalid choice index: 5</code></td>
+</tr>
+<tr>
+<td>Disabled choice selected</td>
+<td><code>Cannot select disabled choice</code></td>
+</tr>
+<tr>
+<td>Conditions not met</td>
+<td><code>Choice conditions not met</code></td>
+</tr>
+<tr>
+<td>No active dialogue</td>
+<td><code>No active dialogue</code></td>
+</tr>
+<tr>
+<td>Dialogue ended</td>
+<td><code>Dialogue has ended</code></td>
+</tr>
+<tr>
+<td>Invalid game flags</td>
+<td><code>gameFlags must be a valid FlagStore</code></td>
+</tr>
+<tr>
+<td>Invalid action handler</td>
+<td><code>actionHandler &quot;name&quot; must be a function</code></td>
+</tr>
+<tr>
+<td>Invalid i18n adapter</td>
+<td><code>i18n adapter must have a &quot;t&quot; method</code></td>
+</tr>
+</tbody></table>
+<hr>
+<h2><code>DialogueStructureError</code></h2>
+<p>Thrown when dialogue structure is invalid at runtime.</p>
+<p><strong>Signature:</strong></p>
+<pre><code class="language-typescript">class DialogueStructureError extends DialogueError {
+  constructor(message: string, dialogueId?: string, nodeId?: string)
+  name: &#39;DialogueStructureError&#39;
+  dialogueId?: string  // The dialogue that has the error
+  nodeId?: string      // The node that caused the error
+}
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-typescript">import { DialogueStructureError } from &#39;@motioneffector/dialogue&#39;
+
+try {
+  await runner.choose(0)
+} catch (error) {
+  if (error instanceof DialogueStructureError) {
+    console.error(`Structure error in dialogue &quot;${error.dialogueId}&quot;`)
+    if (error.nodeId) {
+      console.error(`At node: ${error.nodeId}`)
+    }
+  }
+}
+</code></pre>
+<p><strong>Common Causes:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Message</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Target node not found</td>
+<td><code>Target node not found: nodeId</code></td>
+</tr>
+<tr>
+<td>Node not found</td>
+<td><code>Node not found: nodeId</code></td>
+</tr>
+</tbody></table>
+<hr>
+<h2>Error Handling Patterns</h2>
+<h3>Catching All Dialogue Errors</h3>
+<pre><code class="language-typescript">import { DialogueError } from &#39;@motioneffector/dialogue&#39;
+
+try {
+  await runDialogue()
+} catch (error) {
+  if (error instanceof DialogueError) {
+    // Handle any dialogue-related error
+    showErrorMessage(error.message)
+  } else {
+    // Re-throw non-dialogue errors
+    throw error
+  }
+}
+</code></pre>
+<h3>Specific Error Handling</h3>
+<pre><code class="language-typescript">import { ValidationError, DialogueStructureError } from &#39;@motioneffector/dialogue&#39;
+
+try {
+  await runner.choose(choiceIndex)
+} catch (error) {
+  if (error instanceof ValidationError) {
+    if (error.message.includes(&#39;conditions not met&#39;)) {
+      showMessage(&#39;You cannot select that choice right now.&#39;)
+    } else if (error.message.includes(&#39;disabled&#39;)) {
+      showMessage(&#39;That option is not available.&#39;)
+    } else {
+      showMessage(`Invalid choice: ${error.message}`)
+    }
+  } else if (error instanceof DialogueStructureError) {
+    console.error(`Dialogue bug: ${error.message}`)
+    // Fall back to a safe state
+    await runner.restart()
+  }
+}
+</code></pre>
+<h3>Validation Before Runtime</h3>
+<pre><code class="language-typescript">import { validateDialogue } from &#39;@motioneffector/dialogue&#39;
+
+// Validate at build/load time to avoid runtime errors
+function loadDialogue(dialogue) {
+  const result = validateDialogue(dialogue)
+  if (!result.valid) {
+    // Log errors but don&#39;t throw - handle gracefully
+    console.error(&#39;Dialogue validation errors:&#39;, result.errors)
+    return null
+  }
+  return dialogue
+}
+</code></pre>
+<hr>
+<h2>Error Inheritance</h2>
+<pre><code>Error
+└── DialogueError
+    ├── ValidationError
+    └── DialogueStructureError
+</code></pre>
+<p>All errors extend <code>DialogueError</code>, which extends the native <code>Error</code> class. You can catch at any level of the hierarchy.</p>
+
+        </article>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Responding to Events - @motioneffector/dialogue</title>
+  <link rel="stylesheet" href="../demo-files/demo.css">
+  <link rel="stylesheet" href="manual.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <h1 class="header-title">@motioneffector/dialogue</h1>
+      <p class="header-description">Documentation</p>
+      <nav class="header-links">
+        <a href="../index.html" class="header-link">Demo</a>
+        <a href="https://www.npmjs.com/package/@motioneffector/dialogue" class="header-link">npm</a>
+        <a href="https://github.com/motioneffector/dialogue" class="header-link">GitHub</a>
+      </nav>
+    </header>
+
+    <div class="manual-layout">
+      <aside class="manual-sidebar">
+        <nav class="sidebar-nav">
+<p><strong><a href="index.html">@motioneffector/dialogue</a></strong></p>
+<p><strong>Getting Started</strong></p>
+<ul>
+<li><a href="installation.html">Installation</a></li>
+<li><a href="your-first-dialogue.html">Your First Dialogue</a></li>
+</ul>
+<p><strong>Core Concepts</strong></p>
+<ul>
+<li><a href="concept-dialogue-trees.html">Dialogue Trees</a></li>
+<li><a href="concept-dialoguerunner.html">The DialogueRunner</a></li>
+<li><a href="concept-flags.html">Flags</a></li>
+<li><a href="concept-conditions.html">Conditions</a></li>
+<li><a href="concept-actions.html">Actions</a></li>
+</ul>
+<p><strong>Guides</strong></p>
+<ul>
+<li><a href="guide-conditional-choices.html">Conditional Choices</a></li>
+<li><a href="guide-working-with-flags.html">Working with Flags</a></li>
+<li><a href="guide-dynamic-text.html">Dynamic Text</a></li>
+<li><a href="guide-configuring-speakers.html">Configuring Speakers</a></li>
+<li><a href="guide-navigating-history.html">Navigating History</a></li>
+<li><a href="guide-saving-and-restoring-state.html">Saving and Restoring State</a></li>
+<li><a href="guide-responding-to-events.html">Responding to Events</a></li>
+<li><a href="guide-validating-dialogues.html">Validating Dialogues</a></li>
+<li><a href="guide-internationalization.html">Internationalization</a></li>
+</ul>
+<p><strong>API Reference</strong></p>
+<ul>
+<li><a href="api-dialoguerunner.html">DialogueRunner API</a></li>
+<li><a href="api-navigation.html">Navigation API</a></li>
+<li><a href="api-state.html">State API</a></li>
+<li><a href="api-types.html">Types Reference</a></li>
+<li><a href="api-validation.html">Validation API</a></li>
+<li><a href="api-i18n.html">I18n API</a></li>
+<li><a href="api-errors.html">Errors</a></li>
+</ul>
+
+        </nav>
+      </aside>
+
+      <main class="manual-content">
+        <article class="manual-article">
+<h1>Responding to Events</h1>
+<p>React to dialogue events in your game code. Trigger animations, play sounds, update UI, or log analytics when things happen in the dialogue.</p>
+<h2>Prerequisites</h2>
+<p>Before starting, you should:</p>
+<ul>
+<li><a href="your-first-dialogue.html">Complete Your First Dialogue</a></li>
+</ul>
+<h2>Overview</h2>
+<p>We&#39;ll connect dialogue events to game systems like audio, animation, and analytics.</p>
+<ol>
+<li>Register event callbacks</li>
+<li>Handle node transitions</li>
+<li>Respond to choices</li>
+<li>Debug with action and condition events</li>
+</ol>
+<h2>Step 1: Register Event Callbacks</h2>
+<p>Pass callbacks in the runner options:</p>
+<pre><code class="language-typescript">import { createDialogueRunner } from &#39;@motioneffector/dialogue&#39;
+
+const runner = createDialogueRunner({
+  onDialogueStart: (dialogue) =&gt; {
+    console.log(`Starting dialogue: ${dialogue.id}`)
+  },
+  onDialogueEnd: (dialogueId, endNode) =&gt; {
+    console.log(`Dialogue ${dialogueId} ended at node: ${endNode?.text}`)
+  },
+  onNodeEnter: (node, speaker) =&gt; {
+    console.log(`Entered node: ${node.text.substring(0, 50)}...`)
+  },
+  onNodeExit: (node) =&gt; {
+    console.log(`Exited node`)
+  },
+  onChoiceSelected: (choice, index) =&gt; {
+    console.log(`Player chose option ${index}: ${choice.text}`)
+  }
+})
+</code></pre>
+<h2>Step 2: Handle Node Transitions</h2>
+<p><code>onNodeEnter</code> fires every time a new node is displayed. Use it to update your UI:</p>
+<pre><code class="language-typescript">const runner = createDialogueRunner({
+  speakers: {
+    npc: { name: &#39;Elder&#39;, portrait: &#39;elder.png&#39; }
+  },
+  onNodeEnter: (node, speaker) =&gt; {
+    // Update dialogue box
+    dialogueUI.setText(node.text)
+
+    // Update speaker display
+    if (speaker) {
+      dialogueUI.showSpeaker(speaker.name, speaker.portrait)
+    } else {
+      dialogueUI.hidePortrait()  // Narrator text
+    }
+
+    // Play voice line if tagged
+    if (node.tags?.includes(&#39;voiced&#39;)) {
+      audioManager.playVoice(node.speaker, node.text)
+    }
+  },
+  onNodeExit: (node) =&gt; {
+    // Clean up previous node
+    audioManager.stopVoice()
+  }
+})
+</code></pre>
+<h2>Step 3: Respond to Choices</h2>
+<p><code>onChoiceSelected</code> fires when the player makes a selection:</p>
+<pre><code class="language-typescript">const runner = createDialogueRunner({
+  onChoiceSelected: (choice, index) =&gt; {
+    // Play click sound
+    audioManager.play(&#39;ui_click&#39;)
+
+    // Log for analytics
+    analytics.track(&#39;dialogue_choice&#39;, {
+      choice: choice.text,
+      index: index,
+      tags: choice.tags
+    })
+
+    // Trigger animation based on choice tags
+    if (choice.tags?.includes(&#39;aggressive&#39;)) {
+      characterAnimator.play(&#39;angry_gesture&#39;)
+    } else if (choice.tags?.includes(&#39;friendly&#39;)) {
+      characterAnimator.play(&#39;smile&#39;)
+    }
+  }
+})
+</code></pre>
+<h2>Step 4: Debug Events</h2>
+<p><code>onActionExecuted</code> and <code>onConditionEvaluated</code> help debug complex dialogues:</p>
+<pre><code class="language-typescript">const runner = createDialogueRunner({
+  onActionExecuted: (action, result) =&gt; {
+    console.log(`Action executed:`, action)
+    console.log(`Result:`, result)
+  },
+  onConditionEvaluated: (condition, result) =&gt; {
+    console.log(`Condition:`, condition)
+    console.log(`Passed:`, result)
+  }
+})
+</code></pre>
+<h2>Complete Example</h2>
+<pre><code class="language-typescript">import { createDialogueRunner, DialogueDefinition } from &#39;@motioneffector/dialogue&#39;
+
+// Mock game systems
+const gameUI = {
+  showDialogue: (text: string, speaker?: string) =&gt; {
+    console.log(speaker ? `[${speaker}]: ${text}` : text)
+  },
+  hideDialogue: () =&gt; console.log(&#39;--- Dialogue closed ---&#39;),
+  showChoices: (choices: string[]) =&gt; {
+    choices.forEach((c, i) =&gt; console.log(`  ${i + 1}. ${c}`))
+  }
+}
+
+const audioManager = {
+  play: (sound: string) =&gt; console.log(`[Audio] Playing: ${sound}`),
+  playMusic: (track: string) =&gt; console.log(`[Music] Playing: ${track}`)
+}
+
+const analytics = {
+  track: (event: string, data: any) =&gt; console.log(`[Analytics] ${event}:`, data)
+}
+
+// Create runner with all events
+const runner = createDialogueRunner({
+  speakers: {
+    wizard: { name: &#39;Archmage Thorn&#39;, portrait: &#39;wizard.png&#39; },
+    player: { name: &#39;Hero&#39; }
+  },
+
+  onDialogueStart: (dialogue) =&gt; {
+    audioManager.playMusic(&#39;mysterious_theme&#39;)
+    analytics.track(&#39;dialogue_started&#39;, { id: dialogue.id })
+  },
+
+  onDialogueEnd: (dialogueId, endNode) =&gt; {
+    gameUI.hideDialogue()
+    analytics.track(&#39;dialogue_completed&#39;, {
+      id: dialogueId,
+      endNode: endNode?.text?.substring(0, 30)
+    })
+  },
+
+  onNodeEnter: (node, speaker) =&gt; {
+    gameUI.showDialogue(node.text, speaker?.name)
+
+    if (node.tags?.includes(&#39;dramatic&#39;)) {
+      audioManager.play(&#39;dramatic_sting&#39;)
+    }
+  },
+
+  onChoiceSelected: (choice, index) =&gt; {
+    audioManager.play(&#39;ui_select&#39;)
+    analytics.track(&#39;choice_made&#39;, {
+      text: choice.text,
+      index
+    })
+  },
+
+  onActionExecuted: (action, result) =&gt; {
+    if (action.type === &#39;callback&#39;) {
+      console.log(`[Callback] ${action.name} returned:`, result)
+    }
+  }
+})
+
+const dialogue: DialogueDefinition = {
+  id: &#39;wizard-meeting&#39;,
+  startNode: &#39;intro&#39;,
+  nodes: {
+    intro: {
+      speaker: &#39;wizard&#39;,
+      text: &#39;Ah, you have finally arrived.&#39;,
+      tags: [&#39;dramatic&#39;],
+      next: &#39;choice&#39;
+    },
+    choice: {
+      speaker: &#39;wizard&#39;,
+      text: &#39;I have a task for you. Will you accept?&#39;,
+      choices: [
+        { text: &#39;What is it?&#39;, next: &#39;explain&#39; },
+        { text: &#39;I accept blindly&#39;, next: &#39;accept&#39;, tags: [&#39;brave&#39;] },
+        { text: &#39;I refuse&#39;, next: &#39;refuse&#39; }
+      ]
+    },
+    explain: {
+      speaker: &#39;wizard&#39;,
+      text: &#39;Retrieve the Crystal of Ages from the dungeon.&#39;,
+      next: &#39;choice&#39;
+    },
+    accept: {
+      speaker: &#39;wizard&#39;,
+      text: &#39;Excellent! Your courage will be rewarded.&#39;,
+      tags: [&#39;dramatic&#39;],
+      isEnd: true
+    },
+    refuse: {
+      speaker: &#39;wizard&#39;,
+      text: &#39;A pity. Leave my tower.&#39;,
+      isEnd: true
+    }
+  }
+}
+
+async function main() {
+  await runner.start(dialogue)
+
+  // Simulate player input
+  await runner.choose(0)  // &quot;What is it?&quot;
+  await runner.choose(1)  // &quot;I accept blindly&quot;
+}
+
+main()
+</code></pre>
+<h2>Variations</h2>
+<h3>Async Event Handlers</h3>
+<p>Event handlers can be async, but they don&#39;t block the dialogue:</p>
+<pre><code class="language-typescript">onNodeEnter: async (node, speaker) =&gt; {
+  await loadVoiceFile(node.speaker)
+  playVoice()
+}
+</code></pre>
+<h3>Conditional Event Logic</h3>
+<p>Check node properties to handle different scenarios:</p>
+<pre><code class="language-typescript">onNodeEnter: (node, speaker) =&gt; {
+  if (node.isEnd) {
+    showEndDialogueAnimation()
+  }
+
+  if (node.speaker === &#39;villain&#39;) {
+    playVillainTheme()
+  }
+}
+</code></pre>
+<h3>Using Tags for Event Routing</h3>
+<pre><code class="language-typescript">onNodeEnter: (node, speaker) =&gt; {
+  node.tags?.forEach(tag =&gt; {
+    switch (tag) {
+      case &#39;shake_screen&#39;:
+        camera.shake()
+        break
+      case &#39;flash&#39;:
+        screen.flash()
+        break
+      case &#39;pause&#39;:
+        dialogue.waitForInput()
+        break
+    }
+  })
+}
+</code></pre>
+<h2>Troubleshooting</h2>
+<h3>Event Not Firing</h3>
+<p><strong>Symptom:</strong> Your callback never runs.</p>
+<p><strong>Cause:</strong> Callback not passed to runner options.</p>
+<p><strong>Solution:</strong> Verify you passed the callback when creating the runner, not after.</p>
+<h3>Event Fires Multiple Times</h3>
+<p><strong>Symptom:</strong> <code>onNodeEnter</code> fires more than expected.</p>
+<p><strong>Cause:</strong> Auto-advancing nodes fire enter events too.</p>
+<p><strong>Solution:</strong> This is correct behavior. Each node entered fires the event. Filter by <code>node.text</code> or tags if needed.</p>
+<h2>See Also</h2>
+<ul>
+<li><strong><a href="concept-dialoguerunner.html">The DialogueRunner</a></strong> - Runner configuration</li>
+<li><strong><a href="concept-actions.html">Actions</a></strong> - What triggers onActionExecuted</li>
+<li><strong><a href="api-state.html">State API</a></strong> - Event subscription with on()</li>
+</ul>
+
+        </article>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

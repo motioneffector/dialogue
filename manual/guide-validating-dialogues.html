@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Validating Dialogues - @motioneffector/dialogue</title>
+  <link rel="stylesheet" href="../demo-files/demo.css">
+  <link rel="stylesheet" href="manual.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <h1 class="header-title">@motioneffector/dialogue</h1>
+      <p class="header-description">Documentation</p>
+      <nav class="header-links">
+        <a href="../index.html" class="header-link">Demo</a>
+        <a href="https://www.npmjs.com/package/@motioneffector/dialogue" class="header-link">npm</a>
+        <a href="https://github.com/motioneffector/dialogue" class="header-link">GitHub</a>
+      </nav>
+    </header>
+
+    <div class="manual-layout">
+      <aside class="manual-sidebar">
+        <nav class="sidebar-nav">
+<p><strong><a href="index.html">@motioneffector/dialogue</a></strong></p>
+<p><strong>Getting Started</strong></p>
+<ul>
+<li><a href="installation.html">Installation</a></li>
+<li><a href="your-first-dialogue.html">Your First Dialogue</a></li>
+</ul>
+<p><strong>Core Concepts</strong></p>
+<ul>
+<li><a href="concept-dialogue-trees.html">Dialogue Trees</a></li>
+<li><a href="concept-dialoguerunner.html">The DialogueRunner</a></li>
+<li><a href="concept-flags.html">Flags</a></li>
+<li><a href="concept-conditions.html">Conditions</a></li>
+<li><a href="concept-actions.html">Actions</a></li>
+</ul>
+<p><strong>Guides</strong></p>
+<ul>
+<li><a href="guide-conditional-choices.html">Conditional Choices</a></li>
+<li><a href="guide-working-with-flags.html">Working with Flags</a></li>
+<li><a href="guide-dynamic-text.html">Dynamic Text</a></li>
+<li><a href="guide-configuring-speakers.html">Configuring Speakers</a></li>
+<li><a href="guide-navigating-history.html">Navigating History</a></li>
+<li><a href="guide-saving-and-restoring-state.html">Saving and Restoring State</a></li>
+<li><a href="guide-responding-to-events.html">Responding to Events</a></li>
+<li><a href="guide-validating-dialogues.html">Validating Dialogues</a></li>
+<li><a href="guide-internationalization.html">Internationalization</a></li>
+</ul>
+<p><strong>API Reference</strong></p>
+<ul>
+<li><a href="api-dialoguerunner.html">DialogueRunner API</a></li>
+<li><a href="api-navigation.html">Navigation API</a></li>
+<li><a href="api-state.html">State API</a></li>
+<li><a href="api-types.html">Types Reference</a></li>
+<li><a href="api-validation.html">Validation API</a></li>
+<li><a href="api-i18n.html">I18n API</a></li>
+<li><a href="api-errors.html">Errors</a></li>
+</ul>
+
+        </nav>
+      </aside>
+
+      <main class="manual-content">
+        <article class="manual-article">
+<h1>Validating Dialogues</h1>
+<p>Check dialogue structure before runtime to catch errors early. The validator detects missing nodes, broken links, and unreachable content.</p>
+<h2>Prerequisites</h2>
+<p>Before starting, you should:</p>
+<ul>
+<li><a href="concept-dialogue-trees.html">Understand Dialogue Trees</a></li>
+</ul>
+<h2>Overview</h2>
+<p>We&#39;ll use the validation function to check dialogues and handle errors gracefully.</p>
+<ol>
+<li>Run validation on a dialogue</li>
+<li>Check the result</li>
+<li>Handle common errors</li>
+<li>Integrate into your build process</li>
+</ol>
+<h2>Step 1: Run Validation</h2>
+<p>Import and call <code>validateDialogue()</code> with your dialogue definition:</p>
+<pre><code class="language-typescript">import { validateDialogue, DialogueDefinition } from &#39;@motioneffector/dialogue&#39;
+
+const dialogue: DialogueDefinition = {
+  id: &#39;test&#39;,
+  startNode: &#39;start&#39;,
+  nodes: {
+    start: {
+      text: &#39;Hello!&#39;,
+      choices: [
+        { text: &#39;Continue&#39;, next: &#39;middle&#39; },
+        { text: &#39;End&#39;, next: &#39;end&#39; }
+      ]
+    },
+    middle: {
+      text: &#39;Middle node&#39;,
+      next: &#39;end&#39;
+    },
+    end: {
+      text: &#39;Goodbye!&#39;,
+      isEnd: true
+    }
+  }
+}
+
+const result = validateDialogue(dialogue)
+console.log(result.valid)   // true
+console.log(result.errors)  // []
+</code></pre>
+<h2>Step 2: Check the Result</h2>
+<p>The result object has two properties:</p>
+<pre><code class="language-typescript">interface ValidationResult {
+  valid: boolean      // true if no errors
+  errors: string[]    // Array of error messages
+}
+</code></pre>
+<p>Handle invalid dialogues:</p>
+<pre><code class="language-typescript">const result = validateDialogue(dialogue)
+
+if (!result.valid) {
+  console.error(&#39;Dialogue validation failed:&#39;)
+  result.errors.forEach(error =&gt; console.error(`  - ${error}`))
+  throw new Error(&#39;Invalid dialogue&#39;)
+}
+</code></pre>
+<h2>Step 3: Common Errors</h2>
+<h3>Missing Start Node</h3>
+<pre><code class="language-typescript">const broken: DialogueDefinition = {
+  id: &#39;test&#39;,
+  startNode: &#39;begin&#39;,  // Doesn&#39;t exist!
+  nodes: {
+    start: { text: &#39;Hello&#39; }
+  }
+}
+
+// Error: Start node &quot;begin&quot; not found in nodes
+</code></pre>
+<h3>Invalid Choice Target</h3>
+<pre><code class="language-typescript">const broken: DialogueDefinition = {
+  id: &#39;test&#39;,
+  startNode: &#39;start&#39;,
+  nodes: {
+    start: {
+      text: &#39;Hello&#39;,
+      choices: [
+        { text: &#39;Go&#39;, next: &#39;nowhere&#39; }  // Doesn&#39;t exist!
+      ]
+    }
+  }
+}
+
+// Error: Choice in node &quot;start&quot; targets non-existent node &quot;nowhere&quot;
+</code></pre>
+<h3>Orphan Nodes</h3>
+<pre><code class="language-typescript">const broken: DialogueDefinition = {
+  id: &#39;test&#39;,
+  startNode: &#39;start&#39;,
+  nodes: {
+    start: {
+      text: &#39;Hello&#39;,
+      isEnd: true
+    },
+    orphan: {
+      text: &#39;I can never be reached!&#39;
+    }
+  }
+}
+
+// Error: Unreachable nodes: orphan
+</code></pre>
+<h3>Invalid Auto-Advance Target</h3>
+<pre><code class="language-typescript">const broken: DialogueDefinition = {
+  id: &#39;test&#39;,
+  startNode: &#39;start&#39;,
+  nodes: {
+    start: {
+      text: &#39;Hello&#39;,
+      next: &#39;missing&#39;  // Doesn&#39;t exist!
+    }
+  }
+}
+
+// Error: Node &quot;start&quot; auto-advances to non-existent node &quot;missing&quot;
+</code></pre>
+<h2>Step 4: Build Integration</h2>
+<p>Validate dialogues when loading or building your game:</p>
+<pre><code class="language-typescript">import { validateDialogue, DialogueDefinition } from &#39;@motioneffector/dialogue&#39;
+
+// Validate all dialogues at startup
+function loadDialogues(dialogues: DialogueDefinition[]): Map&lt;string, DialogueDefinition&gt; {
+  const loaded = new Map&lt;string, DialogueDefinition&gt;()
+  const errors: string[] = []
+
+  for (const dialogue of dialogues) {
+    const result = validateDialogue(dialogue)
+
+    if (result.valid) {
+      loaded.set(dialogue.id, dialogue)
+    } else {
+      errors.push(`Dialogue &quot;${dialogue.id}&quot;:`)
+      result.errors.forEach(e =&gt; errors.push(`  - ${e}`))
+    }
+  }
+
+  if (errors.length &gt; 0) {
+    console.error(&#39;Dialogue validation errors:&#39;)
+    errors.forEach(e =&gt; console.error(e))
+    throw new Error(`${errors.length} dialogue(s) failed validation`)
+  }
+
+  console.log(`Loaded ${loaded.size} valid dialogues`)
+  return loaded
+}
+</code></pre>
+<h2>Complete Example</h2>
+<pre><code class="language-typescript">import { validateDialogue, DialogueDefinition } from &#39;@motioneffector/dialogue&#39;
+
+// A collection of dialogues to validate
+const dialogues: DialogueDefinition[] = [
+  {
+    id: &#39;greeting&#39;,
+    startNode: &#39;start&#39;,
+    nodes: {
+      start: {
+        text: &#39;Hello!&#39;,
+        choices: [
+          { text: &#39;Hi&#39;, next: &#39;respond&#39; },
+          { text: &#39;Bye&#39;, next: &#39;farewell&#39; }
+        ]
+      },
+      respond: {
+        text: &#39;Nice to meet you!&#39;,
+        next: &#39;farewell&#39;
+      },
+      farewell: {
+        text: &#39;Goodbye!&#39;,
+        isEnd: true
+      }
+    }
+  },
+  {
+    id: &#39;broken&#39;,
+    startNode: &#39;intro&#39;,  // This doesn&#39;t exist
+    nodes: {
+      start: {
+        text: &#39;Oops&#39;,
+        choices: [
+          { text: &#39;Go&#39;, next: &#39;nowhere&#39; }  // This doesn&#39;t exist either
+        ]
+      },
+      unreachable: {
+        text: &#39;No way to get here&#39;
+      }
+    }
+  }
+]
+
+// Validate each dialogue
+function validateAll() {
+  console.log(&#39;Validating dialogues...\n&#39;)
+
+  let allValid = true
+
+  for (const dialogue of dialogues) {
+    const result = validateDialogue(dialogue)
+
+    if (result.valid) {
+      console.log(`[OK] ${dialogue.id}`)
+    } else {
+      console.log(`[FAIL] ${dialogue.id}`)
+      result.errors.forEach(error =&gt; {
+        console.log(`       - ${error}`)
+      })
+      allValid = false
+    }
+  }
+
+  console.log(&#39;&#39;)
+
+  if (allValid) {
+    console.log(&#39;All dialogues valid!&#39;)
+  } else {
+    console.log(&#39;Some dialogues have errors. Fix them before running.&#39;)
+  }
+
+  return allValid
+}
+
+validateAll()
+
+// Output:
+// Validating dialogues...
+//
+// [OK] greeting
+// [FAIL] broken
+//        - Start node &quot;intro&quot; not found in nodes
+//        - Choice in node &quot;start&quot; targets non-existent node &quot;nowhere&quot;
+//        - Unreachable nodes: start, unreachable
+//
+// Some dialogues have errors. Fix them before running.
+</code></pre>
+<h2>Variations</h2>
+<h3>Validation in Development Only</h3>
+<p>Skip validation in production for performance:</p>
+<pre><code class="language-typescript">function loadDialogue(dialogue: DialogueDefinition) {
+  if (process.env.NODE_ENV === &#39;development&#39;) {
+    const result = validateDialogue(dialogue)
+    if (!result.valid) {
+      throw new Error(`Invalid dialogue: ${result.errors.join(&#39;, &#39;)}`)
+    }
+  }
+  return dialogue
+}
+</code></pre>
+<h3>Custom Validation Rules</h3>
+<p>Extend validation with your own checks:</p>
+<pre><code class="language-typescript">function validateCustomRules(dialogue: DialogueDefinition): string[] {
+  const errors: string[] = []
+
+  for (const [nodeId, node] of Object.entries(dialogue.nodes)) {
+    // Require all nodes to have tags
+    if (!node.tags || node.tags.length === 0) {
+      errors.push(`Node &quot;${nodeId}&quot; has no tags`)
+    }
+
+    // Require speaker for all text nodes
+    if (!node.speaker &amp;&amp; !node.isEnd) {
+      errors.push(`Node &quot;${nodeId}&quot; has no speaker`)
+    }
+  }
+
+  return errors
+}
+
+function fullValidation(dialogue: DialogueDefinition) {
+  const structuralResult = validateDialogue(dialogue)
+  const customErrors = validateCustomRules(dialogue)
+
+  return {
+    valid: structuralResult.valid &amp;&amp; customErrors.length === 0,
+    errors: [...structuralResult.errors, ...customErrors]
+  }
+}
+</code></pre>
+<h2>Troubleshooting</h2>
+<h3>False Orphan Warning</h3>
+<p><strong>Symptom:</strong> Nodes reported as orphans that you know are reachable.</p>
+<p><strong>Cause:</strong> Conditional choices might be the only path to them.</p>
+<p><strong>Solution:</strong> The validator does reachability analysis statically. Nodes only reachable through conditions that might fail are still considered reachable.</p>
+<h3>No Errors But Still Broken</h3>
+<p><strong>Symptom:</strong> Validation passes but dialogue fails at runtime.</p>
+<p><strong>Cause:</strong> Validation checks structure, not logic. Missing action handlers or bad conditions aren&#39;t caught.</p>
+<p><strong>Solution:</strong> Test the dialogue at runtime. Validation only catches structural issues.</p>
+<h2>See Also</h2>
+<ul>
+<li><strong><a href="concept-dialogue-trees.html">Dialogue Trees</a></strong> - Dialogue structure</li>
+<li><strong><a href="api-validation.html">Validation API</a></strong> - Function reference</li>
+<li><strong><a href="api-errors.html">Errors</a></strong> - Error types thrown at runtime</li>
+</ul>
+
+        </article>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your First Dialogue - @motioneffector/dialogue</title>
+  <link rel="stylesheet" href="../demo-files/demo.css">
+  <link rel="stylesheet" href="manual.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <h1 class="header-title">@motioneffector/dialogue</h1>
+      <p class="header-description">Documentation</p>
+      <nav class="header-links">
+        <a href="../index.html" class="header-link">Demo</a>
+        <a href="https://www.npmjs.com/package/@motioneffector/dialogue" class="header-link">npm</a>
+        <a href="https://github.com/motioneffector/dialogue" class="header-link">GitHub</a>
+      </nav>
+    </header>
+
+    <div class="manual-layout">
+      <aside class="manual-sidebar">
+        <nav class="sidebar-nav">
+<p><strong><a href="index.html">@motioneffector/dialogue</a></strong></p>
+<p><strong>Getting Started</strong></p>
+<ul>
+<li><a href="installation.html">Installation</a></li>
+<li><a href="your-first-dialogue.html">Your First Dialogue</a></li>
+</ul>
+<p><strong>Core Concepts</strong></p>
+<ul>
+<li><a href="concept-dialogue-trees.html">Dialogue Trees</a></li>
+<li><a href="concept-dialoguerunner.html">The DialogueRunner</a></li>
+<li><a href="concept-flags.html">Flags</a></li>
+<li><a href="concept-conditions.html">Conditions</a></li>
+<li><a href="concept-actions.html">Actions</a></li>
+</ul>
+<p><strong>Guides</strong></p>
+<ul>
+<li><a href="guide-conditional-choices.html">Conditional Choices</a></li>
+<li><a href="guide-working-with-flags.html">Working with Flags</a></li>
+<li><a href="guide-dynamic-text.html">Dynamic Text</a></li>
+<li><a href="guide-configuring-speakers.html">Configuring Speakers</a></li>
+<li><a href="guide-navigating-history.html">Navigating History</a></li>
+<li><a href="guide-saving-and-restoring-state.html">Saving and Restoring State</a></li>
+<li><a href="guide-responding-to-events.html">Responding to Events</a></li>
+<li><a href="guide-validating-dialogues.html">Validating Dialogues</a></li>
+<li><a href="guide-internationalization.html">Internationalization</a></li>
+</ul>
+<p><strong>API Reference</strong></p>
+<ul>
+<li><a href="api-dialoguerunner.html">DialogueRunner API</a></li>
+<li><a href="api-navigation.html">Navigation API</a></li>
+<li><a href="api-state.html">State API</a></li>
+<li><a href="api-types.html">Types Reference</a></li>
+<li><a href="api-validation.html">Validation API</a></li>
+<li><a href="api-i18n.html">I18n API</a></li>
+<li><a href="api-errors.html">Errors</a></li>
+</ul>
+
+        </nav>
+      </aside>
+
+      <main class="manual-content">
+        <article class="manual-article">
+<h1>Your First Dialogue</h1>
+<p>Build a working branching dialogue in about 5 minutes.</p>
+<p>By the end of this guide, you&#39;ll have a 3-node conversation where the player can choose between two paths, each leading to a different ending.</p>
+<h2>What We&#39;re Building</h2>
+<p>A simple NPC greeting where the player can ask for help or say goodbye:</p>
+<pre><code>NPC: &quot;Welcome! Need any help?&quot;
+  → &quot;Yes, I&#39;m lost&quot; → NPC: &quot;The exit is north.&quot; → END
+  → &quot;No thanks&quot;     → NPC: &quot;Safe travels!&quot;     → END
+</code></pre>
+<h2>Step 1: Define the Dialogue Structure</h2>
+<p>A dialogue needs three things: an <code>id</code>, a <code>startNode</code>, and a <code>nodes</code> object containing all the conversation nodes.</p>
+<pre><code class="language-typescript">import { createDialogueRunner, DialogueDefinition } from &#39;@motioneffector/dialogue&#39;
+
+const dialogue: DialogueDefinition = {
+  id: &#39;npc-greeting&#39;,
+  startNode: &#39;welcome&#39;,
+  nodes: {
+    welcome: {
+      text: &#39;Welcome! Need any help?&#39;,
+      choices: [
+        { text: &#39;Yes, I\&#39;m lost&#39;, next: &#39;help&#39; },
+        { text: &#39;No thanks&#39;, next: &#39;goodbye&#39; }
+      ]
+    },
+    help: {
+      text: &#39;The exit is to the north. Good luck!&#39;,
+      isEnd: true
+    },
+    goodbye: {
+      text: &#39;Safe travels!&#39;,
+      isEnd: true
+    }
+  }
+}
+</code></pre>
+<p>Each node has <code>text</code> (what&#39;s displayed) and either <code>choices</code> (player options) or <code>isEnd: true</code> (conversation ends here).</p>
+<h2>Step 2: Create the Runner and Start</h2>
+<p>The <code>DialogueRunner</code> manages the dialogue state. Create one and call <code>start()</code> with your dialogue.</p>
+<pre><code class="language-typescript">const runner = createDialogueRunner()
+const state = await runner.start(dialogue)
+
+console.log(state.currentNode.text)
+// Output: &quot;Welcome! Need any help?&quot;
+</code></pre>
+<p>The <code>state</code> object tells you the current node, available choices, and whether the dialogue has ended.</p>
+<h2>Step 3: Display Choices</h2>
+<p>Get available choices with <code>getChoices()</code>. These are the options the player can select.</p>
+<pre><code class="language-typescript">const choices = runner.getChoices()
+
+choices.forEach((choice, index) =&gt; {
+  console.log(`${index}: ${choice.text}`)
+})
+// Output:
+// 0: Yes, I&#39;m lost
+// 1: No thanks
+</code></pre>
+<h2>Step 4: Make a Choice</h2>
+<p>When the player selects an option, call <code>choose()</code> with the choice index.</p>
+<pre><code class="language-typescript">const newState = await runner.choose(0)  // Player selects &quot;Yes, I&#39;m lost&quot;
+
+console.log(newState.currentNode.text)
+// Output: &quot;The exit is to the north. Good luck!&quot;
+
+console.log(newState.isEnded)
+// Output: true
+</code></pre>
+<h2>Step 5: Check for End</h2>
+<p>Use <code>isEnded()</code> to know when the conversation is complete.</p>
+<pre><code class="language-typescript">if (runner.isEnded()) {
+  console.log(&#39;Dialogue complete!&#39;)
+}
+</code></pre>
+<h2>The Complete Code</h2>
+<p>Here&#39;s everything together:</p>
+<pre><code class="language-typescript">import { createDialogueRunner, DialogueDefinition } from &#39;@motioneffector/dialogue&#39;
+
+const dialogue: DialogueDefinition = {
+  id: &#39;npc-greeting&#39;,
+  startNode: &#39;welcome&#39;,
+  nodes: {
+    welcome: {
+      text: &#39;Welcome! Need any help?&#39;,
+      choices: [
+        { text: &#39;Yes, I\&#39;m lost&#39;, next: &#39;help&#39; },
+        { text: &#39;No thanks&#39;, next: &#39;goodbye&#39; }
+      ]
+    },
+    help: {
+      text: &#39;The exit is to the north. Good luck!&#39;,
+      isEnd: true
+    },
+    goodbye: {
+      text: &#39;Safe travels!&#39;,
+      isEnd: true
+    }
+  }
+}
+
+async function runDialogue() {
+  const runner = createDialogueRunner()
+  let state = await runner.start(dialogue)
+
+  while (!state.isEnded) {
+    // Display current text
+    console.log(`NPC: ${state.currentNode.text}`)
+
+    // Display choices
+    const choices = runner.getChoices()
+    choices.forEach((choice, i) =&gt; console.log(`  ${i}: ${choice.text}`))
+
+    // For this example, always pick the first choice
+    state = await runner.choose(0)
+  }
+
+  // Display final text
+  console.log(`NPC: ${state.currentNode.text}`)
+  console.log(&#39;--- Dialogue Complete ---&#39;)
+}
+
+runDialogue()
+</code></pre>
+<h2>What&#39;s Next?</h2>
+<p>Now that you have the basics:</p>
+<ul>
+<li><strong><a href="concept-dialogue-trees.html">Understand Dialogue Trees</a></strong> - Learn how nodes, choices, and auto-advance work</li>
+<li><strong><a href="guide-conditional-choices.html">Add Conditional Choices</a></strong> - Show/hide choices based on game state</li>
+<li><strong><a href="guide-working-with-flags.html">Track State with Flags</a></strong> - Remember player decisions across dialogues</li>
+<li><strong><a href="api-dialoguerunner.html">Explore the API</a></strong> - Full reference for all runner methods</li>
+</ul>
+
+        </article>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

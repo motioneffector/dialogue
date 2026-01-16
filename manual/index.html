@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>@motioneffector/dialogue - @motioneffector/dialogue</title>
+  <link rel="stylesheet" href="../demo-files/demo.css">
+  <link rel="stylesheet" href="manual.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <h1 class="header-title">@motioneffector/dialogue</h1>
+      <p class="header-description">Documentation</p>
+      <nav class="header-links">
+        <a href="../index.html" class="header-link">Demo</a>
+        <a href="https://www.npmjs.com/package/@motioneffector/dialogue" class="header-link">npm</a>
+        <a href="https://github.com/motioneffector/dialogue" class="header-link">GitHub</a>
+      </nav>
+    </header>
+
+    <div class="manual-layout">
+      <aside class="manual-sidebar">
+        <nav class="sidebar-nav">
+<p><strong><a href="index.html">@motioneffector/dialogue</a></strong></p>
+<p><strong>Getting Started</strong></p>
+<ul>
+<li><a href="installation.html">Installation</a></li>
+<li><a href="your-first-dialogue.html">Your First Dialogue</a></li>
+</ul>
+<p><strong>Core Concepts</strong></p>
+<ul>
+<li><a href="concept-dialogue-trees.html">Dialogue Trees</a></li>
+<li><a href="concept-dialoguerunner.html">The DialogueRunner</a></li>
+<li><a href="concept-flags.html">Flags</a></li>
+<li><a href="concept-conditions.html">Conditions</a></li>
+<li><a href="concept-actions.html">Actions</a></li>
+</ul>
+<p><strong>Guides</strong></p>
+<ul>
+<li><a href="guide-conditional-choices.html">Conditional Choices</a></li>
+<li><a href="guide-working-with-flags.html">Working with Flags</a></li>
+<li><a href="guide-dynamic-text.html">Dynamic Text</a></li>
+<li><a href="guide-configuring-speakers.html">Configuring Speakers</a></li>
+<li><a href="guide-navigating-history.html">Navigating History</a></li>
+<li><a href="guide-saving-and-restoring-state.html">Saving and Restoring State</a></li>
+<li><a href="guide-responding-to-events.html">Responding to Events</a></li>
+<li><a href="guide-validating-dialogues.html">Validating Dialogues</a></li>
+<li><a href="guide-internationalization.html">Internationalization</a></li>
+</ul>
+<p><strong>API Reference</strong></p>
+<ul>
+<li><a href="api-dialoguerunner.html">DialogueRunner API</a></li>
+<li><a href="api-navigation.html">Navigation API</a></li>
+<li><a href="api-state.html">State API</a></li>
+<li><a href="api-types.html">Types Reference</a></li>
+<li><a href="api-validation.html">Validation API</a></li>
+<li><a href="api-i18n.html">I18n API</a></li>
+<li><a href="api-errors.html">Errors</a></li>
+</ul>
+
+        </nav>
+      </aside>
+
+      <main class="manual-content">
+        <article class="manual-article">
+<h1>@motioneffector/dialogue</h1>
+<p>Dialogue trees are like choose-your-own-adventure books: you read text, make choices, and the story branches. This library lets you define those trees as data and run them with full control over state, history, and events.</p>
+<h2>I want to...</h2>
+<table>
+<thead>
+<tr>
+<th>Goal</th>
+<th>Where to go</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Get up and running quickly</td>
+<td><a href="your-first-dialogue.html">Your First Dialogue</a></td>
+</tr>
+<tr>
+<td>Understand dialogue structure</td>
+<td><a href="concept-dialogue-trees.html">Dialogue Trees</a></td>
+</tr>
+<tr>
+<td>Show/hide choices based on state</td>
+<td><a href="guide-conditional-choices.html">Conditional Choices</a></td>
+</tr>
+<tr>
+<td>Track player progress</td>
+<td><a href="guide-working-with-flags.html">Working with Flags</a></td>
+</tr>
+<tr>
+<td>Save dialogue progress</td>
+<td><a href="guide-saving-and-restoring-state.html">Saving and Restoring State</a></td>
+</tr>
+<tr>
+<td>Look up a specific method</td>
+<td><a href="api-dialoguerunner.html">API Reference</a></td>
+</tr>
+</tbody></table>
+<h2>Key Concepts</h2>
+<h3>Dialogue Trees</h3>
+<p>A dialogue is a graph of nodes connected by choices. Each node contains text (what&#39;s said) and optionally choices (what the player can do). Choices point to other nodes, creating branching paths through the conversation.</p>
+<h3>The DialogueRunner</h3>
+<p>The runner is the engine that executes your dialogue. You give it a dialogue definition, and it maintains the current position, evaluates conditions, executes actions, and provides navigation methods like <code>back()</code> and <code>restart()</code>.</p>
+<h3>Flags</h3>
+<p>Flags are key-value state that conditions and actions read/write. Game flags persist across dialogues; conversation flags reset when a new dialogue starts. Use them to track inventory, quest progress, or conversation-specific state.</p>
+<h3>Conditions</h3>
+<p>Conditions are boolean expressions that determine if a choice is available. They check flag values using comparison operators (<code>==</code>, <code>&gt;=</code>, etc.) and can be combined with <code>and</code>/<code>or</code>/<code>not</code> logic.</p>
+<h2>Quick Example</h2>
+<pre><code class="language-typescript">import { createDialogueRunner } from &#39;@motioneffector/dialogue&#39;
+
+const dialogue = {
+  id: &#39;greeting&#39;,
+  startNode: &#39;start&#39;,
+  nodes: {
+    start: {
+      text: &#39;Hello, traveler! How can I help you?&#39;,
+      choices: [
+        { text: &#39;Tell me about this place&#39;, next: &#39;about&#39; },
+        { text: &#39;Goodbye&#39;, next: &#39;farewell&#39; }
+      ]
+    },
+    about: {
+      text: &#39;This is the Village of Beginnings. Many adventurers start here.&#39;,
+      next: &#39;start&#39;  // Auto-advance back to start
+    },
+    farewell: {
+      text: &#39;Safe travels!&#39;,
+      isEnd: true
+    }
+  }
+}
+
+const runner = createDialogueRunner()
+const state = await runner.start(dialogue)
+
+console.log(state.currentNode.text)  // &quot;Hello, traveler! How can I help you?&quot;
+console.log(state.availableChoices)  // Two choices available
+
+await runner.choose(0)  // Select &quot;Tell me about this place&quot;
+// Auto-advances to &#39;about&#39;, then back to &#39;start&#39;
+</code></pre>
+<hr>
+<p><strong><a href="api-dialoguerunner.html">Full API Reference →</a></strong></p>
+
+        </article>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conditions - @motioneffector/dialogue</title>
+  <link rel="stylesheet" href="../demo-files/demo.css">
+  <link rel="stylesheet" href="manual.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <h1 class="header-title">@motioneffector/dialogue</h1>
+      <p class="header-description">Documentation</p>
+      <nav class="header-links">
+        <a href="../index.html" class="header-link">Demo</a>
+        <a href="https://www.npmjs.com/package/@motioneffector/dialogue" class="header-link">npm</a>
+        <a href="https://github.com/motioneffector/dialogue" class="header-link">GitHub</a>
+      </nav>
+    </header>
+
+    <div class="manual-layout">
+      <aside class="manual-sidebar">
+        <nav class="sidebar-nav">
+<p><strong><a href="index.html">@motioneffector/dialogue</a></strong></p>
+<p><strong>Getting Started</strong></p>
+<ul>
+<li><a href="installation.html">Installation</a></li>
+<li><a href="your-first-dialogue.html">Your First Dialogue</a></li>
+</ul>
+<p><strong>Core Concepts</strong></p>
+<ul>
+<li><a href="concept-dialogue-trees.html">Dialogue Trees</a></li>
+<li><a href="concept-dialoguerunner.html">The DialogueRunner</a></li>
+<li><a href="concept-flags.html">Flags</a></li>
+<li><a href="concept-conditions.html">Conditions</a></li>
+<li><a href="concept-actions.html">Actions</a></li>
+</ul>
+<p><strong>Guides</strong></p>
+<ul>
+<li><a href="guide-conditional-choices.html">Conditional Choices</a></li>
+<li><a href="guide-working-with-flags.html">Working with Flags</a></li>
+<li><a href="guide-dynamic-text.html">Dynamic Text</a></li>
+<li><a href="guide-configuring-speakers.html">Configuring Speakers</a></li>
+<li><a href="guide-navigating-history.html">Navigating History</a></li>
+<li><a href="guide-saving-and-restoring-state.html">Saving and Restoring State</a></li>
+<li><a href="guide-responding-to-events.html">Responding to Events</a></li>
+<li><a href="guide-validating-dialogues.html">Validating Dialogues</a></li>
+<li><a href="guide-internationalization.html">Internationalization</a></li>
+</ul>
+<p><strong>API Reference</strong></p>
+<ul>
+<li><a href="api-dialoguerunner.html">DialogueRunner API</a></li>
+<li><a href="api-navigation.html">Navigation API</a></li>
+<li><a href="api-state.html">State API</a></li>
+<li><a href="api-types.html">Types Reference</a></li>
+<li><a href="api-validation.html">Validation API</a></li>
+<li><a href="api-i18n.html">I18n API</a></li>
+<li><a href="api-errors.html">Errors</a></li>
+</ul>
+
+        </nav>
+      </aside>
+
+      <main class="manual-content">
+        <article class="manual-article">
+<h1>Conditions</h1>
+<p>Conditions are boolean expressions that control choice visibility. A choice with a failing condition is hidden from the player (by default) or shown as unavailable.</p>
+<h2>How It Works</h2>
+<p>Conditions check flag values using comparison operators. They can be combined with logical operators to create complex requirements.</p>
+<pre><code class="language-typescript">// Simple: &quot;player has at least 100 gold&quot;
+conditions: { check: [&#39;gold&#39;, &#39;&gt;=&#39;, 100] }
+
+// Compound: &quot;player has key AND is not poisoned&quot;
+conditions: {
+  and: [
+    { check: [&#39;hasKey&#39;, &#39;==&#39;, true] },
+    { not: { check: [&#39;isPoisoned&#39;, &#39;==&#39;, true] } }
+  ]
+}
+</code></pre>
+<p>When evaluating choices, the runner:</p>
+<ol>
+<li>Checks each choice&#39;s conditions against current flags</li>
+<li>Hides choices with failing conditions (by default)</li>
+<li>Returns only available choices from <code>getChoices()</code></li>
+</ol>
+<h2>Basic Usage</h2>
+<pre><code class="language-typescript">const dialogue = {
+  id: &#39;locked-door&#39;,
+  startNode: &#39;door&#39;,
+  nodes: {
+    door: {
+      text: &#39;A locked door blocks your path.&#39;,
+      choices: [
+        {
+          text: &#39;Use the key&#39;,
+          next: &#39;opened&#39;,
+          conditions: { check: [&#39;hasKey&#39;, &#39;==&#39;, true] }
+        },
+        {
+          text: &#39;Force it open (Strength 15+)&#39;,
+          next: &#39;forced&#39;,
+          conditions: { check: [&#39;strength&#39;, &#39;&gt;=&#39;, 15] }
+        },
+        {
+          text: &#39;Leave&#39;,
+          next: &#39;leave&#39;
+        }
+      ]
+    },
+    opened: { text: &#39;The door swings open.&#39;, isEnd: true },
+    forced: { text: &#39;You break down the door!&#39;, isEnd: true },
+    leave: { text: &#39;You walk away.&#39;, isEnd: true }
+  }
+}
+</code></pre>
+<p>If the player has no key and strength &lt; 15, only &quot;Leave&quot; appears.</p>
+<h2>Key Points</h2>
+<ul>
+<li><p><strong>Basic check format</strong>: <code>{ check: [&#39;flagName&#39;, &#39;operator&#39;, value] }</code></p>
+</li>
+<li><p><strong>Operators</strong>: <code>==</code>, <code>!=</code>, <code>&gt;</code>, <code>&lt;</code>, <code>&gt;=</code>, <code>&lt;=</code></p>
+</li>
+<li><p><strong>Combinators</strong>: <code>{ and: [...] }</code>, <code>{ or: [...] }</code>, <code>{ not: {...} }</code></p>
+</li>
+<li><p><strong>Missing flags</strong> are treated as <code>undefined</code>. A check like <code>[&#39;missingFlag&#39;, &#39;==&#39;, true]</code> fails.</p>
+</li>
+<li><p><strong>Nesting</strong>: Combine operators arbitrarily: <code>{ and: [{ or: [...] }, { not: {...} }] }</code></p>
+</li>
+<li><p><strong>Hidden by default</strong>: Failing conditions hide the choice. Use <code>getChoices({ includeUnavailable: true })</code> to see all choices with availability info.</p>
+</li>
+</ul>
+<h2>Examples</h2>
+<h3>Numeric Comparisons</h3>
+<pre><code class="language-typescript">// Must have enough gold
+conditions: { check: [&#39;gold&#39;, &#39;&gt;=&#39;, 100] }
+
+// Health below threshold
+conditions: { check: [&#39;health&#39;, &#39;&lt;&#39;, 25] }
+
+// Exact level match
+conditions: { check: [&#39;level&#39;, &#39;==&#39;, 10] }
+</code></pre>
+<h3>Boolean Checks</h3>
+<pre><code class="language-typescript">// Flag is true
+conditions: { check: [&#39;hasKey&#39;, &#39;==&#39;, true] }
+
+// Flag is false (or missing)
+conditions: { check: [&#39;isEvil&#39;, &#39;==&#39;, false] }
+
+// Flag is NOT true (same as above, different style)
+conditions: { not: { check: [&#39;isEvil&#39;, &#39;==&#39;, true] } }
+</code></pre>
+<h3>String Comparisons</h3>
+<pre><code class="language-typescript">// Specific class
+conditions: { check: [&#39;playerClass&#39;, &#39;==&#39;, &#39;mage&#39;] }
+
+// Not a specific faction
+conditions: { check: [&#39;faction&#39;, &#39;!=&#39;, &#39;enemy&#39;] }
+</code></pre>
+<h3>AND - All Must Pass</h3>
+<pre><code class="language-typescript">// Need both key AND enough gold
+conditions: {
+  and: [
+    { check: [&#39;hasKey&#39;, &#39;==&#39;, true] },
+    { check: [&#39;gold&#39;, &#39;&gt;=&#39;, 50] }
+  ]
+}
+</code></pre>
+<h3>OR - Any Must Pass</h3>
+<pre><code class="language-typescript">// Can open with key OR lockpick
+conditions: {
+  or: [
+    { check: [&#39;hasKey&#39;, &#39;==&#39;, true] },
+    { check: [&#39;hasLockpick&#39;, &#39;==&#39;, true] }
+  ]
+}
+</code></pre>
+<h3>NOT - Invert Result</h3>
+<pre><code class="language-typescript">// Only if NOT poisoned
+conditions: { not: { check: [&#39;isPoisoned&#39;, &#39;==&#39;, true] } }
+</code></pre>
+<h3>Complex Nested Conditions</h3>
+<pre><code class="language-typescript">// (hasKey OR hasLockpick) AND (NOT isWounded) AND (gold &gt;= 10)
+conditions: {
+  and: [
+    {
+      or: [
+        { check: [&#39;hasKey&#39;, &#39;==&#39;, true] },
+        { check: [&#39;hasLockpick&#39;, &#39;==&#39;, true] }
+      ]
+    },
+    { not: { check: [&#39;isWounded&#39;, &#39;==&#39;, true] } },
+    { check: [&#39;gold&#39;, &#39;&gt;=&#39;, 10] }
+  ]
+}
+</code></pre>
+<h3>Conversation Flags in Conditions</h3>
+<pre><code class="language-typescript">// Only show if we discussed this topic in this conversation
+conditions: { check: [&#39;conv:discussedQuest&#39;, &#39;==&#39;, true] }
+</code></pre>
+<h3>Showing Unavailable Choices</h3>
+<pre><code class="language-typescript">const choices = runner.getChoices({ includeUnavailable: true })
+
+choices.forEach(choice =&gt; {
+  if (choice.available) {
+    console.log(`[ ] ${choice.text}`)
+  } else {
+    console.log(`[X] ${choice.text} (${choice.reason})`)
+  }
+})
+</code></pre>
+<p>This lets you show grayed-out choices so players know what they&#39;re missing.</p>
+<h2>Related</h2>
+<ul>
+<li><strong><a href="concept-flags.html">Flags</a></strong> - The state that conditions check</li>
+<li><strong><a href="guide-conditional-choices.html">Conditional Choices</a></strong> - Practical guide to conditional logic</li>
+<li><strong><a href="api-types.html">Types Reference</a></strong> - Full Condition type definition</li>
+</ul>
+
+        </article>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DialogueRunner API - @motioneffector/dialogue</title>
+  <link rel="stylesheet" href="../demo-files/demo.css">
+  <link rel="stylesheet" href="manual.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <h1 class="header-title">@motioneffector/dialogue</h1>
+      <p class="header-description">Documentation</p>
+      <nav class="header-links">
+        <a href="../index.html" class="header-link">Demo</a>
+        <a href="https://www.npmjs.com/package/@motioneffector/dialogue" class="header-link">npm</a>
+        <a href="https://github.com/motioneffector/dialogue" class="header-link">GitHub</a>
+      </nav>
+    </header>
+
+    <div class="manual-layout">
+      <aside class="manual-sidebar">
+        <nav class="sidebar-nav">
+<p><strong><a href="index.html">@motioneffector/dialogue</a></strong></p>
+<p><strong>Getting Started</strong></p>
+<ul>
+<li><a href="installation.html">Installation</a></li>
+<li><a href="your-first-dialogue.html">Your First Dialogue</a></li>
+</ul>
+<p><strong>Core Concepts</strong></p>
+<ul>
+<li><a href="concept-dialogue-trees.html">Dialogue Trees</a></li>
+<li><a href="concept-dialoguerunner.html">The DialogueRunner</a></li>
+<li><a href="concept-flags.html">Flags</a></li>
+<li><a href="concept-conditions.html">Conditions</a></li>
+<li><a href="concept-actions.html">Actions</a></li>
+</ul>
+<p><strong>Guides</strong></p>
+<ul>
+<li><a href="guide-conditional-choices.html">Conditional Choices</a></li>
+<li><a href="guide-working-with-flags.html">Working with Flags</a></li>
+<li><a href="guide-dynamic-text.html">Dynamic Text</a></li>
+<li><a href="guide-configuring-speakers.html">Configuring Speakers</a></li>
+<li><a href="guide-navigating-history.html">Navigating History</a></li>
+<li><a href="guide-saving-and-restoring-state.html">Saving and Restoring State</a></li>
+<li><a href="guide-responding-to-events.html">Responding to Events</a></li>
+<li><a href="guide-validating-dialogues.html">Validating Dialogues</a></li>
+<li><a href="guide-internationalization.html">Internationalization</a></li>
+</ul>
+<p><strong>API Reference</strong></p>
+<ul>
+<li><a href="api-dialoguerunner.html">DialogueRunner API</a></li>
+<li><a href="api-navigation.html">Navigation API</a></li>
+<li><a href="api-state.html">State API</a></li>
+<li><a href="api-types.html">Types Reference</a></li>
+<li><a href="api-validation.html">Validation API</a></li>
+<li><a href="api-i18n.html">I18n API</a></li>
+<li><a href="api-errors.html">Errors</a></li>
+</ul>
+
+        </nav>
+      </aside>
+
+      <main class="manual-content">
+        <article class="manual-article">
+<h1>DialogueRunner API</h1>
+<p>Core methods for running and interacting with dialogues.</p>
+<hr>
+<h2><code>createDialogueRunner()</code></h2>
+<p>Creates a new DialogueRunner instance with optional configuration.</p>
+<p><strong>Signature:</strong></p>
+<pre><code class="language-typescript">function createDialogueRunner(options?: DialogueRunnerOptions): DialogueRunner
+</code></pre>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>options</code></td>
+<td><code>DialogueRunnerOptions</code></td>
+<td>No</td>
+<td>Configuration for the runner</td>
+</tr>
+</tbody></table>
+<p><strong>Returns:</strong> <code>DialogueRunner</code> — A new runner instance ready to execute dialogues.</p>
+<p><strong>Example:</strong></p>
+<pre><code class="language-typescript">import { createDialogueRunner } from &#39;@motioneffector/dialogue&#39;
+
+// Basic usage
+const runner = createDialogueRunner()
+
+// With configuration
+const runner = createDialogueRunner({
+  gameFlags: myFlagStore,
+  speakers: { npc: { name: &#39;Villager&#39; } },
+  onNodeEnter: (node, speaker) =&gt; console.log(node.text)
+})
+</code></pre>
+<p><strong>Throws:</strong></p>
+<ul>
+<li><code>ValidationError</code> — When <code>gameFlags</code> is not a valid FlagStore</li>
+<li><code>ValidationError</code> — When <code>actionHandlers</code> contains non-function values</li>
+<li><code>ValidationError</code> — When <code>i18n</code> adapter is missing required methods</li>
+</ul>
+<hr>
+<h2><code>runner.start()</code></h2>
+<p>Starts a dialogue from its start node. Clears previous state and conversation flags.</p>
+<p><strong>Signature:</strong></p>
+<pre><code class="language-typescript">start(dialogue: DialogueDefinition): Promise&lt;DialogueState&gt;
+</code></pre>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>dialogue</code></td>
+<td><code>DialogueDefinition</code></td>
+<td>Yes</td>
+<td>The dialogue to execute</td>
+</tr>
+</tbody></table>
+<p><strong>Returns:</strong> <code>Promise&lt;DialogueState&gt;</code> — The initial state including current node and available choices.</p>
+<p><strong>Example:</strong></p>
+<pre><code class="language-typescript">const dialogue = {
+  id: &#39;greeting&#39;,
+  startNode: &#39;start&#39;,
+  nodes: {
+    start: { text: &#39;Hello!&#39;, choices: [{ text: &#39;Hi&#39;, next: &#39;end&#39; }] },
+    end: { text: &#39;Goodbye!&#39;, isEnd: true }
+  }
+}
+
+const state = await runner.start(dialogue)
+console.log(state.currentNode.text)  // &quot;Hello!&quot;
+console.log(state.isEnded)           // false
+</code></pre>
+<p><strong>Throws:</strong></p>
+<ul>
+<li><code>ValidationError</code> — When start node is not found</li>
+</ul>
+<hr>
+<h2><code>runner.getChoices()</code></h2>
+<p>Returns available choices for the current node, filtered by conditions.</p>
+<p><strong>Signature:</strong></p>
+<pre><code class="language-typescript">getChoices(options?: GetChoicesOptions): ChoiceDefinition[] | ChoiceWithAvailability[]
+</code></pre>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>options</code></td>
+<td><code>GetChoicesOptions</code></td>
+<td>No</td>
+<td>Options for filtering choices</td>
+</tr>
+</tbody></table>
+<p><strong>Returns:</strong> <code>ChoiceDefinition[]</code> — Available choices (default), or <code>ChoiceWithAvailability[]</code> if <code>includeUnavailable: true</code>.</p>
+<p><strong>Example:</strong></p>
+<pre><code class="language-typescript">// Get only available choices
+const choices = runner.getChoices()
+
+// Include unavailable choices with availability info
+const allChoices = runner.getChoices({ includeUnavailable: true })
+allChoices.forEach(choice =&gt; {
+  console.log(`${choice.text}: ${choice.available ? &#39;available&#39; : choice.reason}`)
+})
+
+// Include disabled choices
+const withDisabled = runner.getChoices({ includeDisabled: true })
+
+// Custom filter
+const tagged = runner.getChoices({
+  filter: choice =&gt; choice.tags?.includes(&#39;important&#39;)
+})
+</code></pre>
+<hr>
+<h2><code>runner.choose()</code></h2>
+<p>Selects a choice by index and advances to the next node.</p>
+<p><strong>Signature:</strong></p>
+<pre><code class="language-typescript">choose(index: number): Promise&lt;DialogueState&gt;
+</code></pre>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>index</code></td>
+<td><code>number</code></td>
+<td>Yes</td>
+<td>Index of the choice in the original choices array</td>
+</tr>
+</tbody></table>
+<p><strong>Returns:</strong> <code>Promise&lt;DialogueState&gt;</code> — The new state after the choice.</p>
+<p><strong>Example:</strong></p>
+<pre><code class="language-typescript">const choices = runner.getChoices()
+console.log(choices[0].text)  // &quot;Accept quest&quot;
+
+const newState = await runner.choose(0)
+console.log(newState.currentNode.text)  // Next node&#39;s text
+</code></pre>
+<p><strong>Throws:</strong></p>
+<ul>
+<li><code>ValidationError</code> — When no active dialogue</li>
+<li><code>ValidationError</code> — When dialogue has ended</li>
+<li><code>ValidationError</code> — When index is out of bounds</li>
+<li><code>ValidationError</code> — When choice is disabled</li>
+<li><code>ValidationError</code> — When choice conditions are not met</li>
+<li><code>ValidationError</code> — When target node is not found</li>
+</ul>
+<hr>
+<h2><code>runner.getCurrentNode()</code></h2>
+<p>Returns the current node definition with interpolated text.</p>
+<p><strong>Signature:</strong></p>
+<pre><code class="language-typescript">getCurrentNode(): NodeDefinition | null
+</code></pre>
+<p><strong>Returns:</strong> <code>NodeDefinition | null</code> — The current node, or null if no dialogue is active.</p>
+<p><strong>Example:</strong></p>
+<pre><code class="language-typescript">const node = runner.getCurrentNode()
+if (node) {
+  console.log(node.text)
+  console.log(node.speaker)
+}
+</code></pre>
+<hr>
+<h2><code>runner.isEnded()</code></h2>
+<p>Checks if the current dialogue has ended.</p>
+<p><strong>Signature:</strong></p>
+<pre><code class="language-typescript">isEnded(): boolean
+</code></pre>
+<p><strong>Returns:</strong> <code>boolean</code> — True if the dialogue has reached an end node.</p>
+<p><strong>Example:</strong></p>
+<pre><code class="language-typescript">while (!runner.isEnded()) {
+  displayNode(runner.getCurrentNode())
+  const choice = await getUserChoice(runner.getChoices())
+  await runner.choose(choice)
+}
+console.log(&#39;Dialogue complete!&#39;)
+</code></pre>
+<hr>
+<h2>Types</h2>
+<h3><code>DialogueRunnerOptions</code></h3>
+<pre><code class="language-typescript">interface DialogueRunnerOptions {
+  gameFlags?: FlagStore
+  actionHandlers?: Record&lt;string, ActionHandler&gt;
+  speakers?: Record&lt;string, Speaker&gt;
+  i18n?: I18nAdapter
+  interpolation?: Record&lt;string, InterpolationFunction&gt;
+  onNodeEnter?: (node: NodeDefinition, speaker?: Speaker) =&gt; void
+  onNodeExit?: (node: NodeDefinition) =&gt; void
+  onChoiceSelected?: (choice: ChoiceDefinition, index: number) =&gt; void
+  onDialogueStart?: (dialogue: DialogueDefinition) =&gt; void
+  onDialogueEnd?: (dialogueId: string, endNode?: NodeDefinition) =&gt; void
+  onActionExecuted?: (action: Action, result?: unknown) =&gt; void
+  onConditionEvaluated?: (condition: Condition, result: boolean) =&gt; void
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>gameFlags</code></td>
+<td><code>FlagStore</code></td>
+<td>External flag store for persistent state</td>
+</tr>
+<tr>
+<td><code>actionHandlers</code></td>
+<td><code>Record&lt;string, ActionHandler&gt;</code></td>
+<td>Callback action handlers</td>
+</tr>
+<tr>
+<td><code>speakers</code></td>
+<td><code>Record&lt;string, Speaker&gt;</code></td>
+<td>Speaker metadata by ID</td>
+</tr>
+<tr>
+<td><code>i18n</code></td>
+<td><code>I18nAdapter</code></td>
+<td>Internationalization adapter</td>
+</tr>
+<tr>
+<td><code>interpolation</code></td>
+<td><code>Record&lt;string, InterpolationFunction&gt;</code></td>
+<td>Custom text interpolation functions</td>
+</tr>
+<tr>
+<td><code>onNodeEnter</code></td>
+<td><code>function</code></td>
+<td>Called when entering a node</td>
+</tr>
+<tr>
+<td><code>onNodeExit</code></td>
+<td><code>function</code></td>
+<td>Called when leaving a node</td>
+</tr>
+<tr>
+<td><code>onChoiceSelected</code></td>
+<td><code>function</code></td>
+<td>Called when a choice is made</td>
+</tr>
+<tr>
+<td><code>onDialogueStart</code></td>
+<td><code>function</code></td>
+<td>Called when dialogue starts</td>
+</tr>
+<tr>
+<td><code>onDialogueEnd</code></td>
+<td><code>function</code></td>
+<td>Called when dialogue ends</td>
+</tr>
+<tr>
+<td><code>onActionExecuted</code></td>
+<td><code>function</code></td>
+<td>Called after each action executes</td>
+</tr>
+<tr>
+<td><code>onConditionEvaluated</code></td>
+<td><code>function</code></td>
+<td>Called after each condition check</td>
+</tr>
+</tbody></table>
+<h3><code>GetChoicesOptions</code></h3>
+<pre><code class="language-typescript">interface GetChoicesOptions {
+  includeUnavailable?: boolean
+  includeDisabled?: boolean
+  filter?: (choice: ChoiceDefinition) =&gt; boolean
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>includeUnavailable</code></td>
+<td><code>boolean</code></td>
+<td>Include choices with failing conditions. Default: <code>false</code></td>
+</tr>
+<tr>
+<td><code>includeDisabled</code></td>
+<td><code>boolean</code></td>
+<td>Include choices with <code>disabled: true</code>. Default: <code>false</code></td>
+</tr>
+<tr>
+<td><code>filter</code></td>
+<td><code>function</code></td>
+<td>Custom filter function</td>
+</tr>
+</tbody></table>
+<h3><code>DialogueState</code></h3>
+<pre><code class="language-typescript">interface DialogueState {
+  currentNode: NodeDefinition
+  availableChoices: ChoiceDefinition[]
+  isEnded: boolean
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>currentNode</code></td>
+<td><code>NodeDefinition</code></td>
+<td>The current node with interpolated text</td>
+</tr>
+<tr>
+<td><code>availableChoices</code></td>
+<td><code>ChoiceDefinition[]</code></td>
+<td>Choices available at current node</td>
+</tr>
+<tr>
+<td><code>isEnded</code></td>
+<td><code>boolean</code></td>
+<td>Whether dialogue has ended</td>
+</tr>
+</tbody></table>
+
+        </article>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

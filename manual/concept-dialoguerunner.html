@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The DialogueRunner - @motioneffector/dialogue</title>
+  <link rel="stylesheet" href="../demo-files/demo.css">
+  <link rel="stylesheet" href="manual.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <h1 class="header-title">@motioneffector/dialogue</h1>
+      <p class="header-description">Documentation</p>
+      <nav class="header-links">
+        <a href="../index.html" class="header-link">Demo</a>
+        <a href="https://www.npmjs.com/package/@motioneffector/dialogue" class="header-link">npm</a>
+        <a href="https://github.com/motioneffector/dialogue" class="header-link">GitHub</a>
+      </nav>
+    </header>
+
+    <div class="manual-layout">
+      <aside class="manual-sidebar">
+        <nav class="sidebar-nav">
+<p><strong><a href="index.html">@motioneffector/dialogue</a></strong></p>
+<p><strong>Getting Started</strong></p>
+<ul>
+<li><a href="installation.html">Installation</a></li>
+<li><a href="your-first-dialogue.html">Your First Dialogue</a></li>
+</ul>
+<p><strong>Core Concepts</strong></p>
+<ul>
+<li><a href="concept-dialogue-trees.html">Dialogue Trees</a></li>
+<li><a href="concept-dialoguerunner.html">The DialogueRunner</a></li>
+<li><a href="concept-flags.html">Flags</a></li>
+<li><a href="concept-conditions.html">Conditions</a></li>
+<li><a href="concept-actions.html">Actions</a></li>
+</ul>
+<p><strong>Guides</strong></p>
+<ul>
+<li><a href="guide-conditional-choices.html">Conditional Choices</a></li>
+<li><a href="guide-working-with-flags.html">Working with Flags</a></li>
+<li><a href="guide-dynamic-text.html">Dynamic Text</a></li>
+<li><a href="guide-configuring-speakers.html">Configuring Speakers</a></li>
+<li><a href="guide-navigating-history.html">Navigating History</a></li>
+<li><a href="guide-saving-and-restoring-state.html">Saving and Restoring State</a></li>
+<li><a href="guide-responding-to-events.html">Responding to Events</a></li>
+<li><a href="guide-validating-dialogues.html">Validating Dialogues</a></li>
+<li><a href="guide-internationalization.html">Internationalization</a></li>
+</ul>
+<p><strong>API Reference</strong></p>
+<ul>
+<li><a href="api-dialoguerunner.html">DialogueRunner API</a></li>
+<li><a href="api-navigation.html">Navigation API</a></li>
+<li><a href="api-state.html">State API</a></li>
+<li><a href="api-types.html">Types Reference</a></li>
+<li><a href="api-validation.html">Validation API</a></li>
+<li><a href="api-i18n.html">I18n API</a></li>
+<li><a href="api-errors.html">Errors</a></li>
+</ul>
+
+        </nav>
+      </aside>
+
+      <main class="manual-content">
+        <article class="manual-article">
+<h1>The DialogueRunner</h1>
+<p>The DialogueRunner is the engine that executes your dialogue trees. You give it a dialogue definition, and it handles navigation, state tracking, condition evaluation, action execution, and history management.</p>
+<h2>How It Works</h2>
+<p>The runner maintains internal state:</p>
+<ul>
+<li><strong>Current node</strong>: Where you are in the dialogue</li>
+<li><strong>History</strong>: Stack of visited nodes (for back/undo)</li>
+<li><strong>Conversation flags</strong>: Temporary state scoped to this dialogue</li>
+</ul>
+<p>You interact with the runner through async methods. Each method returns the new state or modifies internal state.</p>
+<pre><code>┌─────────────────────────────────────────────┐
+│              DialogueRunner                  │
+├─────────────────────────────────────────────┤
+│  State:                                     │
+│  - currentNode: NodeDefinition              │
+│  - history: HistoryEntry[]                  │
+│  - conversationFlags: Map&lt;string, value&gt;    │
+├─────────────────────────────────────────────┤
+│  Methods:                                   │
+│  - start(dialogue) → DialogueState          │
+│  - choose(index) → DialogueState            │
+│  - getChoices() → ChoiceDefinition[]        │
+│  - getCurrentNode() → NodeDefinition        │
+│  - isEnded() → boolean                      │
+│  - back(), restart(), jumpTo()              │
+│  - serialize(), deserialize()               │
+└─────────────────────────────────────────────┘
+</code></pre>
+<h2>Basic Usage</h2>
+<pre><code class="language-typescript">import { createDialogueRunner, DialogueDefinition } from &#39;@motioneffector/dialogue&#39;
+
+const dialogue: DialogueDefinition = {
+  id: &#39;example&#39;,
+  startNode: &#39;start&#39;,
+  nodes: {
+    start: {
+      text: &#39;Hello!&#39;,
+      choices: [{ text: &#39;Hi&#39;, next: &#39;end&#39; }]
+    },
+    end: { text: &#39;Goodbye!&#39;, isEnd: true }
+  }
+}
+
+// Create runner with optional configuration
+const runner = createDialogueRunner({
+  // gameFlags: myFlagStore,
+  // speakers: { npc: { name: &#39;Villager&#39; } },
+  // onNodeEnter: (node, speaker) =&gt; { ... }
+})
+
+// Start the dialogue
+const state = await runner.start(dialogue)
+console.log(state.currentNode.text)  // &quot;Hello!&quot;
+
+// Get available choices
+const choices = runner.getChoices()
+console.log(choices[0].text)  // &quot;Hi&quot;
+
+// Make a selection
+const newState = await runner.choose(0)
+console.log(newState.isEnded)  // true
+</code></pre>
+<h2>Key Points</h2>
+<ul>
+<li><p><strong>Async methods</strong>: <code>start()</code>, <code>choose()</code>, <code>back()</code>, <code>restart()</code>, <code>jumpTo()</code>, and <code>deserialize()</code> are all async because actions can be async.</p>
+</li>
+<li><p><strong>Stateful</strong>: One runner instance handles one dialogue at a time. Starting a new dialogue clears the previous state.</p>
+</li>
+<li><p><strong>Configuration options</strong>: Pass <code>gameFlags</code>, <code>speakers</code>, <code>actionHandlers</code>, <code>i18n</code>, <code>interpolation</code>, and event callbacks when creating the runner.</p>
+</li>
+<li><p><strong>Event callbacks</strong>: React to <code>onNodeEnter</code>, <code>onNodeExit</code>, <code>onChoiceSelected</code>, <code>onDialogueStart</code>, <code>onDialogueEnd</code>, <code>onActionExecuted</code>, and <code>onConditionEvaluated</code>.</p>
+</li>
+<li><p><strong>History tracking</strong>: Every node visit is recorded. Use <code>getHistory()</code> to see the path taken, <code>back()</code> to undo, or <code>jumpTo()</code> for non-linear navigation.</p>
+</li>
+</ul>
+<h2>Examples</h2>
+<h3>With Event Callbacks</h3>
+<pre><code class="language-typescript">const runner = createDialogueRunner({
+  onNodeEnter: (node, speaker) =&gt; {
+    console.log(`Entering node: ${node.text}`)
+    if (speaker) {
+      console.log(`Speaker: ${speaker.name}`)
+    }
+  },
+  onChoiceSelected: (choice, index) =&gt; {
+    console.log(`Player chose: ${choice.text}`)
+  },
+  onDialogueEnd: (dialogueId) =&gt; {
+    console.log(`Dialogue ${dialogueId} complete`)
+  }
+})
+</code></pre>
+<h3>With Game Flags</h3>
+<pre><code class="language-typescript">import { createFlagStore } from &#39;@motioneffector/flags&#39;
+
+const gameFlags = createFlagStore()
+gameFlags.set(&#39;gold&#39;, 100)
+gameFlags.set(&#39;hasKey&#39;, true)
+
+const runner = createDialogueRunner({ gameFlags })
+</code></pre>
+<p>Conditions and actions can read/write these flags. See <a href="concept-flags.html">Flags</a> for details.</p>
+<h3>With Speakers</h3>
+<pre><code class="language-typescript">const runner = createDialogueRunner({
+  speakers: {
+    merchant: { name: &#39;Marcus&#39;, portrait: &#39;merchant.png&#39; },
+    guard: { name: &#39;Sir Roland&#39;, portrait: &#39;guard.png&#39;, color: &#39;#cc0000&#39; }
+  }
+})
+</code></pre>
+<p>Reference speakers in nodes with <code>speaker: &#39;merchant&#39;</code>. The runner resolves the ID to the full speaker object.</p>
+<h2>Related</h2>
+<ul>
+<li><strong><a href="concept-dialogue-trees.html">Dialogue Trees</a></strong> - The data structures the runner executes</li>
+<li><strong><a href="guide-responding-to-events.html">Responding to Events</a></strong> - React to dialogue events in your game</li>
+<li><strong><a href="api-dialoguerunner.html">DialogueRunner API</a></strong> - Full method reference</li>
+</ul>
+
+        </article>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

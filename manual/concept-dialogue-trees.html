@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dialogue Trees - @motioneffector/dialogue</title>
+  <link rel="stylesheet" href="../demo-files/demo.css">
+  <link rel="stylesheet" href="manual.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <h1 class="header-title">@motioneffector/dialogue</h1>
+      <p class="header-description">Documentation</p>
+      <nav class="header-links">
+        <a href="../index.html" class="header-link">Demo</a>
+        <a href="https://www.npmjs.com/package/@motioneffector/dialogue" class="header-link">npm</a>
+        <a href="https://github.com/motioneffector/dialogue" class="header-link">GitHub</a>
+      </nav>
+    </header>
+
+    <div class="manual-layout">
+      <aside class="manual-sidebar">
+        <nav class="sidebar-nav">
+<p><strong><a href="index.html">@motioneffector/dialogue</a></strong></p>
+<p><strong>Getting Started</strong></p>
+<ul>
+<li><a href="installation.html">Installation</a></li>
+<li><a href="your-first-dialogue.html">Your First Dialogue</a></li>
+</ul>
+<p><strong>Core Concepts</strong></p>
+<ul>
+<li><a href="concept-dialogue-trees.html">Dialogue Trees</a></li>
+<li><a href="concept-dialoguerunner.html">The DialogueRunner</a></li>
+<li><a href="concept-flags.html">Flags</a></li>
+<li><a href="concept-conditions.html">Conditions</a></li>
+<li><a href="concept-actions.html">Actions</a></li>
+</ul>
+<p><strong>Guides</strong></p>
+<ul>
+<li><a href="guide-conditional-choices.html">Conditional Choices</a></li>
+<li><a href="guide-working-with-flags.html">Working with Flags</a></li>
+<li><a href="guide-dynamic-text.html">Dynamic Text</a></li>
+<li><a href="guide-configuring-speakers.html">Configuring Speakers</a></li>
+<li><a href="guide-navigating-history.html">Navigating History</a></li>
+<li><a href="guide-saving-and-restoring-state.html">Saving and Restoring State</a></li>
+<li><a href="guide-responding-to-events.html">Responding to Events</a></li>
+<li><a href="guide-validating-dialogues.html">Validating Dialogues</a></li>
+<li><a href="guide-internationalization.html">Internationalization</a></li>
+</ul>
+<p><strong>API Reference</strong></p>
+<ul>
+<li><a href="api-dialoguerunner.html">DialogueRunner API</a></li>
+<li><a href="api-navigation.html">Navigation API</a></li>
+<li><a href="api-state.html">State API</a></li>
+<li><a href="api-types.html">Types Reference</a></li>
+<li><a href="api-validation.html">Validation API</a></li>
+<li><a href="api-i18n.html">I18n API</a></li>
+<li><a href="api-errors.html">Errors</a></li>
+</ul>
+
+        </nav>
+      </aside>
+
+      <main class="manual-content">
+        <article class="manual-article">
+<h1>Dialogue Trees</h1>
+<p>A dialogue tree is a graph of nodes connected by choices. Each node represents a moment in the conversation: what someone says, what the player can do, and where the conversation goes next.</p>
+<h2>How It Works</h2>
+<p>Think of a dialogue as a flowchart:</p>
+<pre><code>[Start] → &quot;Hello!&quot;
+              ↓
+         ┌─────────┐
+         │ Choices │
+         └─────────┘
+        ↙           ↘
+  &quot;Help me&quot;      &quot;Goodbye&quot;
+       ↓              ↓
+   [Help]         [Farewell]
+   &quot;Sure!&quot;        &quot;Bye!&quot;
+       ↓              ↓
+    [END]          [END]
+</code></pre>
+<p>The player enters at the start node, reads text, picks a choice, moves to the next node, and repeats until reaching an end node.</p>
+<h2>Basic Usage</h2>
+<pre><code class="language-typescript">import { DialogueDefinition } from &#39;@motioneffector/dialogue&#39;
+
+const dialogue: DialogueDefinition = {
+  id: &#39;shopkeeper&#39;,
+  startNode: &#39;greeting&#39;,
+  nodes: {
+    greeting: {
+      text: &#39;Welcome to my shop!&#39;,
+      speaker: &#39;merchant&#39;,
+      choices: [
+        { text: &#39;What do you sell?&#39;, next: &#39;inventory&#39; },
+        { text: &#39;Just browsing&#39;, next: &#39;farewell&#39; }
+      ]
+    },
+    inventory: {
+      text: &#39;I have potions, scrolls, and weapons.&#39;,
+      next: &#39;greeting&#39;  // Auto-advance back to greeting
+    },
+    farewell: {
+      text: &#39;Come back anytime!&#39;,
+      isEnd: true
+    }
+  }
+}
+</code></pre>
+<p>The dialogue definition has three parts: <code>id</code> (unique identifier), <code>startNode</code> (where to begin), and <code>nodes</code> (the actual content).</p>
+<h2>Key Points</h2>
+<ul>
+<li><p><strong>DialogueDefinition</strong> has <code>id</code>, <code>startNode</code>, and <code>nodes</code>. The <code>id</code> is used for serialization and events.</p>
+</li>
+<li><p><strong>NodeDefinition</strong> contains <code>text</code> (required), plus optional <code>speaker</code>, <code>choices</code>, <code>actions</code>, <code>tags</code>, <code>next</code>, and <code>isEnd</code>.</p>
+</li>
+<li><p><strong>ChoiceDefinition</strong> has <code>text</code> and <code>next</code> (required), plus optional <code>conditions</code>, <code>actions</code>, <code>tags</code>, <code>disabled</code>, and <code>disabledText</code>.</p>
+</li>
+<li><p><strong>Auto-advance nodes</strong> use <code>next</code> instead of <code>choices</code>. The runner automatically moves to the next node without player input. Useful for NPC monologues or cutscenes.</p>
+</li>
+<li><p><strong>End nodes</strong> are marked with <code>isEnd: true</code> or simply have no <code>choices</code> and no <code>next</code>. When reached, the dialogue is complete.</p>
+</li>
+</ul>
+<h2>Examples</h2>
+<h3>Linear Sequence (Auto-Advance)</h3>
+<pre><code class="language-typescript">const cutscene: DialogueDefinition = {
+  id: &#39;intro-cutscene&#39;,
+  startNode: &#39;line1&#39;,
+  nodes: {
+    line1: {
+      text: &#39;The kingdom has fallen.&#39;,
+      next: &#39;line2&#39;
+    },
+    line2: {
+      text: &#39;Only you can restore it.&#39;,
+      next: &#39;line3&#39;
+    },
+    line3: {
+      text: &#39;Your journey begins now.&#39;,
+      isEnd: true
+    }
+  }
+}
+</code></pre>
+<p>Each node auto-advances to the next. No player choices needed.</p>
+<h3>Branching Paths</h3>
+<pre><code class="language-typescript">const quest: DialogueDefinition = {
+  id: &#39;quest-choice&#39;,
+  startNode: &#39;offer&#39;,
+  nodes: {
+    offer: {
+      text: &#39;Will you help us?&#39;,
+      choices: [
+        { text: &#39;I accept&#39;, next: &#39;accept&#39; },
+        { text: &#39;I refuse&#39;, next: &#39;refuse&#39; },
+        { text: &#39;Tell me more first&#39;, next: &#39;details&#39; }
+      ]
+    },
+    details: {
+      text: &#39;Bandits have stolen our supplies. We need them back.&#39;,
+      next: &#39;offer&#39;  // Return to the choice
+    },
+    accept: {
+      text: &#39;Thank you! Here is the map to their hideout.&#39;,
+      isEnd: true
+    },
+    refuse: {
+      text: &#39;I understand. Perhaps another time.&#39;,
+      isEnd: true
+    }
+  }
+}
+</code></pre>
+<p>Multiple choices branch to different paths. Some paths converge, others end separately.</p>
+<h3>Looping Conversations</h3>
+<pre><code class="language-typescript">const shopLoop: DialogueDefinition = {
+  id: &#39;shop-menu&#39;,
+  startNode: &#39;menu&#39;,
+  nodes: {
+    menu: {
+      text: &#39;What would you like?&#39;,
+      choices: [
+        { text: &#39;Buy items&#39;, next: &#39;buy&#39; },
+        { text: &#39;Sell items&#39;, next: &#39;sell&#39; },
+        { text: &#39;Leave&#39;, next: &#39;leave&#39; }
+      ]
+    },
+    buy: {
+      text: &#39;Here are my wares...&#39;,
+      next: &#39;menu&#39;  // Loop back
+    },
+    sell: {
+      text: &#39;Show me what you have...&#39;,
+      next: &#39;menu&#39;  // Loop back
+    },
+    leave: {
+      text: &#39;Goodbye!&#39;,
+      isEnd: true
+    }
+  }
+}
+</code></pre>
+<p>Nodes can point back to earlier nodes, creating loops. The player stays in the dialogue until they choose to leave.</p>
+<h2>Related</h2>
+<ul>
+<li><strong><a href="concept-dialoguerunner.html">The DialogueRunner</a></strong> - How to execute dialogue trees</li>
+<li><strong><a href="guide-conditional-choices.html">Conditional Choices</a></strong> - Hide choices based on game state</li>
+<li><strong><a href="api-types.html">Types Reference</a></strong> - Full type definitions for DialogueDefinition, NodeDefinition, etc.</li>
+</ul>
+
+        </article>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

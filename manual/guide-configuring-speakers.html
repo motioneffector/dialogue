@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configuring Speakers - @motioneffector/dialogue</title>
+  <link rel="stylesheet" href="../demo-files/demo.css">
+  <link rel="stylesheet" href="manual.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <h1 class="header-title">@motioneffector/dialogue</h1>
+      <p class="header-description">Documentation</p>
+      <nav class="header-links">
+        <a href="../index.html" class="header-link">Demo</a>
+        <a href="https://www.npmjs.com/package/@motioneffector/dialogue" class="header-link">npm</a>
+        <a href="https://github.com/motioneffector/dialogue" class="header-link">GitHub</a>
+      </nav>
+    </header>
+
+    <div class="manual-layout">
+      <aside class="manual-sidebar">
+        <nav class="sidebar-nav">
+<p><strong><a href="index.html">@motioneffector/dialogue</a></strong></p>
+<p><strong>Getting Started</strong></p>
+<ul>
+<li><a href="installation.html">Installation</a></li>
+<li><a href="your-first-dialogue.html">Your First Dialogue</a></li>
+</ul>
+<p><strong>Core Concepts</strong></p>
+<ul>
+<li><a href="concept-dialogue-trees.html">Dialogue Trees</a></li>
+<li><a href="concept-dialoguerunner.html">The DialogueRunner</a></li>
+<li><a href="concept-flags.html">Flags</a></li>
+<li><a href="concept-conditions.html">Conditions</a></li>
+<li><a href="concept-actions.html">Actions</a></li>
+</ul>
+<p><strong>Guides</strong></p>
+<ul>
+<li><a href="guide-conditional-choices.html">Conditional Choices</a></li>
+<li><a href="guide-working-with-flags.html">Working with Flags</a></li>
+<li><a href="guide-dynamic-text.html">Dynamic Text</a></li>
+<li><a href="guide-configuring-speakers.html">Configuring Speakers</a></li>
+<li><a href="guide-navigating-history.html">Navigating History</a></li>
+<li><a href="guide-saving-and-restoring-state.html">Saving and Restoring State</a></li>
+<li><a href="guide-responding-to-events.html">Responding to Events</a></li>
+<li><a href="guide-validating-dialogues.html">Validating Dialogues</a></li>
+<li><a href="guide-internationalization.html">Internationalization</a></li>
+</ul>
+<p><strong>API Reference</strong></p>
+<ul>
+<li><a href="api-dialoguerunner.html">DialogueRunner API</a></li>
+<li><a href="api-navigation.html">Navigation API</a></li>
+<li><a href="api-state.html">State API</a></li>
+<li><a href="api-types.html">Types Reference</a></li>
+<li><a href="api-validation.html">Validation API</a></li>
+<li><a href="api-i18n.html">I18n API</a></li>
+<li><a href="api-errors.html">Errors</a></li>
+</ul>
+
+        </nav>
+      </aside>
+
+      <main class="manual-content">
+        <article class="manual-article">
+<h1>Configuring Speakers</h1>
+<p>Associate character metadata with dialogue nodes. Define portraits, colors, and custom properties for each speaker in your game.</p>
+<h2>Prerequisites</h2>
+<p>Before starting, you should:</p>
+<ul>
+<li><a href="your-first-dialogue.html">Complete Your First Dialogue</a></li>
+</ul>
+<h2>Overview</h2>
+<p>We&#39;ll set up a character database and use it to display speaker information during dialogue.</p>
+<ol>
+<li>Define a speakers object</li>
+<li>Reference speakers in nodes</li>
+<li>Access speaker data in events</li>
+<li>Use custom properties for game-specific data</li>
+</ol>
+<h2>Step 1: Define Speakers</h2>
+<p>Create a speakers object mapping IDs to speaker metadata:</p>
+<pre><code class="language-typescript">import { createDialogueRunner } from &#39;@motioneffector/dialogue&#39;
+
+const runner = createDialogueRunner({
+  speakers: {
+    hero: {
+      name: &#39;You&#39;,
+      portrait: &#39;portraits/hero.png&#39;,
+      color: &#39;#4a90d9&#39;
+    },
+    merchant: {
+      name: &#39;Marcus the Merchant&#39;,
+      portrait: &#39;portraits/merchant.png&#39;,
+      color: &#39;#d4a574&#39;
+    },
+    guard: {
+      name: &#39;City Guard&#39;,
+      portrait: &#39;portraits/guard.png&#39;,
+      color: &#39;#8b0000&#39;
+    }
+  }
+})
+</code></pre>
+<p>The <code>name</code> property is required. Everything else is optional.</p>
+<h2>Step 2: Reference Speakers in Nodes</h2>
+<p>Use the speaker ID in node definitions:</p>
+<pre><code class="language-typescript">const dialogue: DialogueDefinition = {
+  id: &#39;market-conversation&#39;,
+  startNode: &#39;merchant-greeting&#39;,
+  nodes: {
+    &#39;merchant-greeting&#39;: {
+      speaker: &#39;merchant&#39;,
+      text: &#39;Welcome to my shop! Looking for anything special?&#39;,
+      choices: [
+        { text: &#39;What do you have?&#39;, next: &#39;inventory&#39; },
+        { text: &#39;Just looking&#39;, next: &#39;browse&#39; }
+      ]
+    },
+    inventory: {
+      speaker: &#39;merchant&#39;,
+      text: &#39;I have potions, scrolls, and rare artifacts.&#39;,
+      next: &#39;merchant-greeting&#39;
+    },
+    browse: {
+      speaker: &#39;hero&#39;,
+      text: &#39;I\&#39;ll take a look around.&#39;,
+      next: &#39;end&#39;
+    },
+    end: {
+      speaker: &#39;merchant&#39;,
+      text: &#39;Take your time!&#39;,
+      isEnd: true
+    }
+  }
+}
+</code></pre>
+<h2>Step 3: Access Speaker Data in Events</h2>
+<p>The <code>onNodeEnter</code> callback receives the resolved speaker object:</p>
+<pre><code class="language-typescript">const runner = createDialogueRunner({
+  speakers: {
+    npc: { name: &#39;Elder&#39;, portrait: &#39;elder.png&#39;, color: &#39;#gold&#39; }
+  },
+  onNodeEnter: (node, speaker) =&gt; {
+    if (speaker) {
+      // Update your UI
+      displayPortrait(speaker.portrait)
+      setNameColor(speaker.color)
+      showSpeakerName(speaker.name)
+    } else {
+      // Narrator or unattributed text
+      hidePortrait()
+    }
+
+    displayDialogueText(node.text)
+  }
+})
+</code></pre>
+<h2>Step 4: Custom Properties</h2>
+<p>Add any properties your game needs:</p>
+<pre><code class="language-typescript">const runner = createDialogueRunner({
+  speakers: {
+    wizard: {
+      name: &#39;Archmage Elara&#39;,
+      portrait: &#39;wizard.png&#39;,
+      color: &#39;#9b59b6&#39;,
+      // Custom properties
+      voiceActor: &#39;voice/elara/&#39;,
+      animationSet: &#39;elderly_female&#39;,
+      faction: &#39;mages_guild&#39;,
+      relationship: &#39;friendly&#39;
+    }
+  },
+  onNodeEnter: (node, speaker) =&gt; {
+    if (speaker) {
+      playVoiceLine(speaker.voiceActor + &#39;greeting.mp3&#39;)
+      setCharacterAnimation(speaker.animationSet)
+    }
+  }
+})
+</code></pre>
+<h2>Complete Example</h2>
+<pre><code class="language-typescript">import { createDialogueRunner, DialogueDefinition, Speaker } from &#39;@motioneffector/dialogue&#39;
+
+interface GameSpeaker extends Speaker {
+  voiceId?: string
+  mood?: &#39;happy&#39; | &#39;neutral&#39; | &#39;angry&#39;
+}
+
+const speakers: Record&lt;string, GameSpeaker&gt; = {
+  player: {
+    name: &#39;Hero&#39;,
+    portrait: &#39;hero.png&#39;,
+    color: &#39;#3498db&#39;
+  },
+  innkeeper: {
+    name: &#39;Greta&#39;,
+    portrait: &#39;innkeeper.png&#39;,
+    color: &#39;#e67e22&#39;,
+    voiceId: &#39;greta&#39;,
+    mood: &#39;happy&#39;
+  },
+  stranger: {
+    name: &#39;???&#39;,
+    portrait: &#39;hooded.png&#39;,
+    color: &#39;#2c3e50&#39;,
+    voiceId: &#39;stranger&#39;,
+    mood: &#39;neutral&#39;
+  }
+}
+
+const runner = createDialogueRunner({
+  speakers,
+  onNodeEnter: (node, speaker) =&gt; {
+    const gameSpeaker = speaker as GameSpeaker | undefined
+
+    if (gameSpeaker) {
+      console.log(`[${gameSpeaker.name}]: ${node.text}`)
+      console.log(`  Portrait: ${gameSpeaker.portrait}`)
+      console.log(`  Mood: ${gameSpeaker.mood || &#39;neutral&#39;}`)
+    } else {
+      console.log(`[Narrator]: ${node.text}`)
+    }
+  }
+})
+
+const dialogue: DialogueDefinition = {
+  id: &#39;inn-scene&#39;,
+  startNode: &#39;enter&#39;,
+  nodes: {
+    enter: {
+      text: &#39;You enter the warm, bustling inn.&#39;,  // No speaker = narrator
+      next: &#39;greet&#39;
+    },
+    greet: {
+      speaker: &#39;innkeeper&#39;,
+      text: &#39;Welcome, traveler! Need a room for the night?&#39;,
+      choices: [
+        { text: &#39;Yes please&#39;, next: &#39;room&#39; },
+        { text: &#39;Who\&#39;s that in the corner?&#39;, next: &#39;stranger-intro&#39; }
+      ]
+    },
+    room: {
+      speaker: &#39;innkeeper&#39;,
+      text: &#39;That\&#39;ll be 10 gold. Up the stairs, second door.&#39;,
+      isEnd: true
+    },
+    &#39;stranger-intro&#39;: {
+      speaker: &#39;innkeeper&#39;,
+      text: &#39;That one? Arrived yesterday. Hasn\&#39;t said a word.&#39;,
+      next: &#39;stranger-speaks&#39;
+    },
+    &#39;stranger-speaks&#39;: {
+      speaker: &#39;stranger&#39;,
+      text: &#39;...I can hear you, you know.&#39;,
+      isEnd: true
+    }
+  }
+}
+
+await runner.start(dialogue)
+</code></pre>
+<h2>Variations</h2>
+<h3>Dynamic Speaker Names</h3>
+<p>Use interpolation for names that change:</p>
+<pre><code class="language-typescript">speakers: {
+  companion: { name: &#39;{{companionName}}&#39;, portrait: &#39;companion.png&#39; }
+}
+</code></pre>
+<p>Set <code>companionName</code> in your game flags to customize.</p>
+<h3>No Speaker (Narrator)</h3>
+<p>Omit the <code>speaker</code> property for narration:</p>
+<pre><code class="language-typescript">nodes: {
+  narration: {
+    text: &#39;The wind howls outside as night falls.&#39;,  // No speaker
+    next: &#39;dialogue&#39;
+  }
+}
+</code></pre>
+<h3>Unknown Speakers</h3>
+<p>Reveal identities progressively:</p>
+<pre><code class="language-typescript">const speakers = {
+  mysterious: { name: &#39;???&#39;, portrait: &#39;silhouette.png&#39; },
+  revealed: { name: &#39;Prince Aldric&#39;, portrait: &#39;prince.png&#39; }
+}
+
+// Later in dialogue, switch speakers when identity is revealed
+</code></pre>
+<h2>Troubleshooting</h2>
+<h3>Speaker Not Appearing</h3>
+<p><strong>Symptom:</strong> <code>onNodeEnter</code> receives <code>undefined</code> for speaker.</p>
+<p><strong>Cause:</strong> Speaker ID in node doesn&#39;t match any key in speakers object.</p>
+<p><strong>Solution:</strong> Check spelling. <code>speaker: &#39;Merchant&#39;</code> won&#39;t match <code>speakers: { merchant: ... }</code>.</p>
+<h3>Portrait Path Issues</h3>
+<p><strong>Symptom:</strong> Portraits don&#39;t load in your UI.</p>
+<p><strong>Cause:</strong> Path format doesn&#39;t match your asset loader.</p>
+<p><strong>Solution:</strong> The library doesn&#39;t load images - it just stores the path. Ensure your UI code handles the path correctly.</p>
+<h2>See Also</h2>
+<ul>
+<li><strong><a href="concept-dialoguerunner.html">The DialogueRunner</a></strong> - Runner configuration options</li>
+<li><strong><a href="guide-dynamic-text.html">Dynamic Text</a></strong> - Using <code>{{speaker}}</code> in text</li>
+<li><strong><a href="guide-responding-to-events.html">Responding to Events</a></strong> - Using onNodeEnter</li>
+</ul>
+
+        </article>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

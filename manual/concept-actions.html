@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Actions - @motioneffector/dialogue</title>
+  <link rel="stylesheet" href="../demo-files/demo.css">
+  <link rel="stylesheet" href="manual.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <h1 class="header-title">@motioneffector/dialogue</h1>
+      <p class="header-description">Documentation</p>
+      <nav class="header-links">
+        <a href="../index.html" class="header-link">Demo</a>
+        <a href="https://www.npmjs.com/package/@motioneffector/dialogue" class="header-link">npm</a>
+        <a href="https://github.com/motioneffector/dialogue" class="header-link">GitHub</a>
+      </nav>
+    </header>
+
+    <div class="manual-layout">
+      <aside class="manual-sidebar">
+        <nav class="sidebar-nav">
+<p><strong><a href="index.html">@motioneffector/dialogue</a></strong></p>
+<p><strong>Getting Started</strong></p>
+<ul>
+<li><a href="installation.html">Installation</a></li>
+<li><a href="your-first-dialogue.html">Your First Dialogue</a></li>
+</ul>
+<p><strong>Core Concepts</strong></p>
+<ul>
+<li><a href="concept-dialogue-trees.html">Dialogue Trees</a></li>
+<li><a href="concept-dialoguerunner.html">The DialogueRunner</a></li>
+<li><a href="concept-flags.html">Flags</a></li>
+<li><a href="concept-conditions.html">Conditions</a></li>
+<li><a href="concept-actions.html">Actions</a></li>
+</ul>
+<p><strong>Guides</strong></p>
+<ul>
+<li><a href="guide-conditional-choices.html">Conditional Choices</a></li>
+<li><a href="guide-working-with-flags.html">Working with Flags</a></li>
+<li><a href="guide-dynamic-text.html">Dynamic Text</a></li>
+<li><a href="guide-configuring-speakers.html">Configuring Speakers</a></li>
+<li><a href="guide-navigating-history.html">Navigating History</a></li>
+<li><a href="guide-saving-and-restoring-state.html">Saving and Restoring State</a></li>
+<li><a href="guide-responding-to-events.html">Responding to Events</a></li>
+<li><a href="guide-validating-dialogues.html">Validating Dialogues</a></li>
+<li><a href="guide-internationalization.html">Internationalization</a></li>
+</ul>
+<p><strong>API Reference</strong></p>
+<ul>
+<li><a href="api-dialoguerunner.html">DialogueRunner API</a></li>
+<li><a href="api-navigation.html">Navigation API</a></li>
+<li><a href="api-state.html">State API</a></li>
+<li><a href="api-types.html">Types Reference</a></li>
+<li><a href="api-validation.html">Validation API</a></li>
+<li><a href="api-i18n.html">I18n API</a></li>
+<li><a href="api-errors.html">Errors</a></li>
+</ul>
+
+        </nav>
+      </aside>
+
+      <main class="manual-content">
+        <article class="manual-article">
+<h1>Actions</h1>
+<p>Actions are commands that execute when nodes are entered or choices are selected. They modify flags, trigger game callbacks, and enable dialogues to affect game state.</p>
+<h2>How It Works</h2>
+<p>Actions are defined in arrays on nodes or choices:</p>
+<pre><code class="language-typescript">// Node actions: execute when entering the node
+const node = {
+  text: &#39;You found treasure!&#39;,
+  actions: [
+    { type: &#39;increment&#39;, flag: &#39;gold&#39;, value: 100 }
+  ]
+}
+
+// Choice actions: execute when selecting the choice
+const choice = {
+  text: &#39;Bribe the guard&#39;,
+  next: &#39;bribed&#39;,
+  actions: [
+    { type: &#39;decrement&#39;, flag: &#39;gold&#39;, value: 50 },
+    { type: &#39;set&#39;, flag: &#39;guardBribed&#39;, value: true }
+  ]
+}
+</code></pre>
+<p>Actions execute in order. Node actions run before the node is displayed. Choice actions run before transitioning to the next node.</p>
+<h2>Basic Usage</h2>
+<pre><code class="language-typescript">import { createDialogueRunner } from &#39;@motioneffector/dialogue&#39;
+
+const runner = createDialogueRunner({
+  actionHandlers: {
+    playSound: (args) =&gt; {
+      const [soundName] = args as [string]
+      console.log(`Playing sound: ${soundName}`)
+    },
+    giveItem: async (args) =&gt; {
+      const [itemId, quantity] = args as [string, number]
+      // Could be async database operation
+      console.log(`Giving ${quantity}x ${itemId}`)
+    }
+  }
+})
+
+const dialogue = {
+  id: &#39;reward&#39;,
+  startNode: &#39;start&#39;,
+  nodes: {
+    start: {
+      text: &#39;Here is your reward!&#39;,
+      actions: [
+        { type: &#39;increment&#39;, flag: &#39;gold&#39;, value: 100 },
+        { type: &#39;callback&#39;, name: &#39;playSound&#39;, args: [&#39;coins.wav&#39;] },
+        { type: &#39;callback&#39;, name: &#39;giveItem&#39;, args: [&#39;sword&#39;, 1] }
+      ],
+      isEnd: true
+    }
+  }
+}
+</code></pre>
+<h2>Key Points</h2>
+<ul>
+<li><p><strong>Action types</strong>: <code>set</code>, <code>clear</code>, <code>increment</code>, <code>decrement</code>, <code>callback</code></p>
+</li>
+<li><p><strong>Execution order</strong>: Actions run sequentially. Node actions before display, choice actions before transition.</p>
+</li>
+<li><p><strong>Async support</strong>: Callback actions can be async. The runner awaits them.</p>
+</li>
+<li><p><strong>Fail-fast</strong>: Missing callback handlers throw errors. Register all handlers before using them.</p>
+</li>
+<li><p><strong>Flag scopes</strong>: Use <code>conv:flagName</code> for conversation flags, unprefixed for game flags.</p>
+</li>
+</ul>
+<h2>Examples</h2>
+<h3>Set Flag</h3>
+<pre><code class="language-typescript">{ type: &#39;set&#39;, flag: &#39;hasKey&#39;, value: true }
+{ type: &#39;set&#39;, flag: &#39;playerName&#39;, value: &#39;Hero&#39; }
+{ type: &#39;set&#39;, flag: &#39;gold&#39;, value: 500 }
+{ type: &#39;set&#39;, flag: &#39;conv:talkedOnce&#39;, value: true }  // Conversation flag
+</code></pre>
+<h3>Clear Flag</h3>
+<pre><code class="language-typescript">{ type: &#39;clear&#39;, flag: &#39;tempBuff&#39; }
+{ type: &#39;clear&#39;, flag: &#39;conv:rememberedTopic&#39; }
+</code></pre>
+<p>Removes the flag entirely. Subsequent condition checks for this flag return undefined.</p>
+<h3>Increment</h3>
+<pre><code class="language-typescript">{ type: &#39;increment&#39;, flag: &#39;visitCount&#39; }              // +1
+{ type: &#39;increment&#39;, flag: &#39;gold&#39;, value: 50 }         // +50
+{ type: &#39;increment&#39;, flag: &#39;reputation&#39;, value: 10 }
+</code></pre>
+<p>If the flag doesn&#39;t exist, it&#39;s initialized to 0 before incrementing.</p>
+<h3>Decrement</h3>
+<pre><code class="language-typescript">{ type: &#39;decrement&#39;, flag: &#39;gold&#39;, value: 100 }
+{ type: &#39;decrement&#39;, flag: &#39;health&#39;, value: 25 }
+{ type: &#39;decrement&#39;, flag: &#39;stamina&#39; }  // -1
+</code></pre>
+<h3>Callback</h3>
+<pre><code class="language-typescript">{ type: &#39;callback&#39;, name: &#39;handlerName&#39; }
+{ type: &#39;callback&#39;, name: &#39;playSound&#39;, args: [&#39;victory.mp3&#39;] }
+{ type: &#39;callback&#39;, name: &#39;addToInventory&#39;, args: [&#39;potion&#39;, 3] }
+</code></pre>
+<p>Callbacks invoke registered action handlers:</p>
+<pre><code class="language-typescript">const runner = createDialogueRunner({
+  actionHandlers: {
+    playSound: (args) =&gt; {
+      const [fileName] = args as [string]
+      audioEngine.play(fileName)
+    },
+    addToInventory: async (args) =&gt; {
+      const [item, count] = args as [string, number]
+      await inventory.add(item, count)
+    },
+    triggerCutscene: (args) =&gt; {
+      const [cutsceneId] = args as [string]
+      cutsceneManager.play(cutsceneId)
+    }
+  }
+})
+</code></pre>
+<h3>Multiple Actions</h3>
+<pre><code class="language-typescript">const node = {
+  text: &#39;You completed the quest!&#39;,
+  actions: [
+    { type: &#39;set&#39;, flag: &#39;quest1Complete&#39;, value: true },
+    { type: &#39;increment&#39;, flag: &#39;gold&#39;, value: 200 },
+    { type: &#39;increment&#39;, flag: &#39;experience&#39;, value: 50 },
+    { type: &#39;callback&#39;, name: &#39;playSound&#39;, args: [&#39;quest_complete.wav&#39;] },
+    { type: &#39;callback&#39;, name: &#39;showAchievement&#39;, args: [&#39;First Quest&#39;] }
+  ],
+  isEnd: true
+}
+</code></pre>
+<h3>Actions on Choices</h3>
+<pre><code class="language-typescript">const node = {
+  text: &#39;The merchant offers you a deal.&#39;,
+  choices: [
+    {
+      text: &#39;Accept (pay 100 gold)&#39;,
+      next: &#39;accepted&#39;,
+      conditions: { check: [&#39;gold&#39;, &#39;&gt;=&#39;, 100] },
+      actions: [
+        { type: &#39;decrement&#39;, flag: &#39;gold&#39;, value: 100 },
+        { type: &#39;set&#39;, flag: &#39;hasMerchantDeal&#39;, value: true }
+      ]
+    },
+    {
+      text: &#39;Decline&#39;,
+      next: &#39;declined&#39;
+    }
+  ]
+}
+</code></pre>
+<h3>Listening to Actions</h3>
+<pre><code class="language-typescript">const runner = createDialogueRunner({
+  onActionExecuted: (action, result) =&gt; {
+    console.log(`Action executed: ${action.type}`, result)
+  }
+})
+</code></pre>
+<h2>Related</h2>
+<ul>
+<li><strong><a href="concept-flags.html">Flags</a></strong> - The state that actions modify</li>
+<li><strong><a href="guide-working-with-flags.html">Working with Flags</a></strong> - Practical guide to state management</li>
+<li><strong><a href="guide-responding-to-events.html">Responding to Events</a></strong> - Using onActionExecuted</li>
+<li><strong><a href="api-types.html">Types Reference</a></strong> - Full Action type definition</li>
+</ul>
+
+        </article>
+      </main>
+    </div>
+  </div>
+</body>
+</html>
