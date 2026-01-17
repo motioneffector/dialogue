@@ -13,3 +13,6 @@ coverage/
 !README.md
 !CHANGELOG.md
 !AGENTS.md
+e2e/
+playwright.config.ts
+test-results/

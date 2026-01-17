@@ -209,7 +209,8 @@ function exhibit1RenderDialogue(state) {
       const isAvailable = choice.available !== false
       return `
         <button class="choice-btn"
-                onclick="selectChoice(${index})"
+                data-action="selectChoice"
+                data-index="${index}"
                 ${!isAvailable ? 'disabled' : ''}>
           ${hasActions ? '<span class="action-indicator">⚡</span>' : ''}
           <span>${choice.text}</span>
@@ -529,7 +530,7 @@ function renderTimeMachine() {
 
   // Render timeline
   timelineEl.innerHTML = prePopulatedHistory.map((entry, index) => `
-    <div class="timeline-node ${index === exhibit3CurrentIndex ? 'current' : ''}" onclick="tmJumpTo(${index})">
+    <div class="timeline-node ${index === exhibit3CurrentIndex ? 'current' : ''}" data-action="tmJumpTo" data-index="${index}">
       <div class="timeline-node-number">${index + 1}</div>
       <div class="timeline-node-icon">${entry.speaker}</div>
     </div>
@@ -552,7 +553,7 @@ function renderTimeMachine() {
     choicesEl.innerHTML = '<div class="text-muted">Dialogue has ended.</div>'
   } else if (node.choices) {
     choicesEl.innerHTML = node.choices.map((choice, i) => `
-      <button class="choice-btn" onclick="tmChoose(${i})">${choice.text}</button>
+      <button class="choice-btn" data-action="tmChoose" data-index="${i}">${choice.text}</button>
     `).join('')
   }
 
@@ -601,7 +602,7 @@ function renderTimeMachine() {
         <div class="save-slot-preview">🏪</div>
         <div class="save-slot-info">${slot.gold}g - Node ${slot.nodeId.replace('node', '')}</div>
         <div class="save-slot-actions">
-          <button class="btn btn-small btn-primary" onclick="loadSlot(${i}); event.stopPropagation();">Load</button>
+          <button class="btn btn-small btn-primary" data-action="loadSlot" data-index="${i}">Load</button>
         </div>
       `
     }
@@ -707,6 +708,31 @@ window.saveCurrentSlot = saveCurrentSlot
 // ============================================
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Event delegation for dynamically created elements (avoiding inline onclick)
+  document.addEventListener('click', (e) => {
+    const target = e.target.closest('[data-action]')
+    if (!target) return
+
+    const action = target.dataset.action
+    const index = parseInt(target.dataset.index, 10)
+
+    switch (action) {
+      case 'selectChoice':
+        selectChoice(index)
+        break
+      case 'tmJumpTo':
+        tmJumpTo(index)
+        break
+      case 'tmChoose':
+        tmChoose(index)
+        break
+      case 'loadSlot':
+        e.stopPropagation()
+        loadSlot(index)
+        break
+    }
+  })
+
   // Initialize exhibit 1 with empty state - dialogue starts but no actions shown
   exhibit1GameFlags.set('gold', 150)
   exhibit1GameFlags.set('reputation', 25)
