@@ -211,10 +211,13 @@ function registerIntegrityTests() {
 
   testRunner.registerTest('[Integrity] Interactive elements have hover states', () => {
     const buttons = document.querySelectorAll('button, .btn')
-    if (buttons.length === 0) return
+    if (buttons.length === 0) return // No buttons to check
 
-    const btn = buttons[0]
-    const styles = window.getComputedStyle(btn)
+    // Check that enabled buttons have pointer cursor (disabled buttons should have not-allowed)
+    const enabledBtn = Array.from(buttons).find(btn => !btn.disabled)
+    if (!enabledBtn) return // All buttons are disabled, skip check
+
+    const styles = window.getComputedStyle(enabledBtn)
     if (styles.cursor !== 'pointer') {
       throw new Error('Buttons should have cursor: pointer')
     }
