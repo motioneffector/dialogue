@@ -6,7 +6,6 @@ A lightweight, type-safe branching dialogue system for games and interactive fic
 [![license](https://img.shields.io/npm/l/@motioneffector/dialogue.svg)](https://github.com/motioneffector/dialogue/blob/main/LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
 
-**[Try the interactive demo →](https://motioneffector.github.io/dialogue/)**
 
 ## Features
 
