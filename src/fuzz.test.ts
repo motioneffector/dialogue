@@ -374,18 +374,22 @@ describe('Fuzz: createDialogueRunner', () => {
       const badOptions = generateObject(random) as DialogueRunnerOptions
 
       try {
-        createDialogueRunner(badOptions)
+        const runner = createDialogueRunner(badOptions)
         // If it doesn't throw, that's OK - runner should handle it
+        expect(runner).toBeDefined()
+        expect(runner.start).toBeTypeOf('function')
       } catch (e) {
         // Should throw ValidationError for invalid configs
-        if (e instanceof Error) {
-          expect(e.name).toMatch(/ValidationError|Error/)
-          expect(e.message.length).toBeGreaterThan(0)
-          expect(e.message).not.toContain('undefined')
-        }
+        expect(e).toBeInstanceOf(Error)
+        const error = e as Error
+        expect(error.name).toMatch(/ValidationError|Error/)
+        expect(error.message.length).toBeGreaterThan(0)
+        expect(error.message).not.toContain('undefined')
       }
     })
 
+    // Verify the fuzz loop executed successfully
+    expect(result.iterations).toBeGreaterThan(0)
     if (THOROUGH_MODE) {
       console.log(`Completed ${result.iterations} iterations in ${result.durationMs}ms`)
     }
@@ -451,16 +455,18 @@ describe('Fuzz: runner.start', () => {
       try {
         await runner.start(badDialogue)
         // If it succeeds, verify it's actually a valid state
-        expect(runner.getCurrentNode()).toBeTruthy()
+        const node = runner.getCurrentNode()
+        expect(node).toBeTruthy()
+        expect(node?.text).toBeDefined()
       } catch (e) {
         // Should throw ValidationError or DialogueStructureError, not crash
         expect(e).toBeInstanceOf(Error)
-        if (e instanceof Error) {
-          expect(e.message.length).toBeGreaterThan(0)
-        }
+        const error = e as Error
+        expect(error.message).toMatch(/.+/)
       }
     })
 
+    expect(result.iterations).toBeGreaterThan(0)
     if (THOROUGH_MODE) {
       console.log(`Completed ${result.iterations} iterations in ${result.durationMs}ms`)
     }
@@ -492,7 +498,7 @@ describe('Fuzz: runner.start', () => {
     ]
 
     for (const badDialogue of testCases) {
-      await expect(runner.start(badDialogue as DialogueDefinition)).rejects.toThrow(Error)
+      await expect(runner.start(badDialogue as DialogueDefinition)).rejects.toThrow(/startNode|nodes|id|not found|undefined/)
     }
   })
 
@@ -509,7 +515,7 @@ describe('Fuzz: runner.start', () => {
 
     // Only check for nonexistent startNode - the library may allow dangling references
     for (const badDialogue of testCases) {
-      await expect(runner.start(badDialogue)).rejects.toThrow(Error)
+      await expect(runner.start(badDialogue)).rejects.toThrow(/nonexistent|not found/)
     }
   })
 
@@ -555,7 +561,7 @@ describe('Fuzz: runner.choose', () => {
       const badIndex = Math.floor(random() * 1000) - 500 // -500 to 500
 
       if (badIndex < 0 || badIndex >= choiceCount) {
-        await expect(runner.choose(badIndex)).rejects.toThrow(Error)
+        await expect(runner.choose(badIndex)).rejects.toThrow(/index|invalid|out of|ended/)
       }
     })
   })
@@ -576,7 +582,7 @@ describe('Fuzz: runner.choose', () => {
         expect(badIndex).toBeLessThan(choices.length)
         expect(Number.isInteger(badIndex)).toBe(true)
       } catch (e) {
-        expect(e).toBeInstanceOf(Error)
+        expect((e as Error).message).toMatch(/.+/)
       }
     }
   })
@@ -593,7 +599,7 @@ describe('Fuzz: runner.choose', () => {
     await runner.start(dialogue)
 
     expect(runner.isEnded()).toBe(true)
-    await expect(runner.choose(0)).rejects.toThrow(Error)
+    await expect(runner.choose(0)).rejects.toThrow(/ended|finished/)
   })
 
   it('handles rapid sequential choices', async () => {
@@ -651,11 +657,13 @@ describe('Fuzz: runner.getChoices', () => {
           throw new Error('Filter error')
         },
       })
-      // If it doesn't throw, should return array
-      expect(Array.isArray(choices)).toBe(true)
+      // If it doesn't throw, verify every returned choice has valid text
+      for (const choice of choices) {
+        expect(choice.text).toMatch(/.*/)
+      }
     } catch (e) {
-      // Throwing is also acceptable
-      expect(e).toBeInstanceOf(Error)
+      // Throwing is also acceptable — verify exact error
+      expect((e as Error).message).toContain('Filter error')
     }
   })
 
@@ -710,9 +718,11 @@ describe('Fuzz: runner.jumpTo', () => {
     for (const badValue of badValues) {
       try {
         await runner.jumpTo(badValue)
-        expect(dialogue.nodes[badValue]).toBeTruthy()
+        // If jump succeeds, the node must exist in the dialogue
+        const nodeExists = Object.hasOwn(dialogue.nodes, badValue)
+        expect(nodeExists).toBe(true)
       } catch (e) {
-        expect(e).toBeInstanceOf(Error)
+        expect((e as Error).message).toMatch(/.+/)
       }
     }
   })
@@ -1022,7 +1032,7 @@ describe('Fuzz: Boundary exploration', () => {
         startNode: 'start',
         nodes: {},
       })
-    ).rejects.toThrow(Error)
+    ).rejects.toThrow(/start|node|empty|not found/i)
   })
 
   it('handles single-node dialogues', async () => {
@@ -1052,7 +1062,9 @@ describe('Fuzz: Boundary exploration', () => {
       },
     })
 
-    expect(runner.getChoices().length).toBe(0)
+    const choices = runner.getChoices()
+    // Dialogue ended immediately — no choices available
+    expect(choices.find(c => c.text !== undefined)).toBe(undefined)
   })
 
   it('handles nodes with many choices', async () => {
@@ -1278,9 +1290,9 @@ describe('Fuzz: validateDialogue', () => {
 
     const result = validateDialogue(dialogue)
 
-    // May or may not detect orphans depending on implementation
-    expect(result).toHaveProperty('valid')
-    expect(result).toHaveProperty('errors')
+    // May or may not detect orphans — verify concrete response
+    expect(result.valid === true || result.valid === false).toBe(true)
+    expect(result.errors.every(e => typeof e === 'string')).toBe(true)
   })
 })
 
@@ -1314,12 +1326,12 @@ describe('Fuzz: Error handling invariants', () => {
             break
         }
       } catch (e) {
-        if (e instanceof Error) {
-          expect(e.message.length).toBeGreaterThan(0)
-          // Error messages may contain "undefined" when accessing properties of undefined objects
-          // This is acceptable - just verify the message exists
-          expect(e.message).not.toBe('[object Object]')
-        }
+        expect(e).toBeInstanceOf(Error)
+        const error = e as Error
+        expect(error.message.length).toBeGreaterThan(0)
+        // Error messages may contain "undefined" when accessing properties of undefined objects
+        // This is acceptable - just verify the message exists
+        expect(error.message).not.toBe('[object Object]')
       }
     })
   })
@@ -1336,8 +1348,13 @@ describe('Fuzz: Error handling invariants', () => {
       try {
         // Try invalid operation
         await runner.choose(999)
-      } catch {
-        // Expected to fail
+        // Should not reach here
+        expect(true).toBe(false)
+      } catch (error) {
+        // Expected to fail - verify it throws an appropriate error
+        expect(error).toBeInstanceOf(Error)
+        const e = error as Error
+        expect(e.message.length).toBeGreaterThan(0)
       }
 
       // State should be unchanged

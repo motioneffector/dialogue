@@ -166,7 +166,8 @@ describe('Actions', () => {
       }
       await runner.start(dialogue)
       const flags = runner.getConversationFlags()
-      expect(flags['temp']).toBeUndefined()
+      const hasTemp = 'temp' in flags
+      expect(hasTemp).toBe(false)
     })
 
     it('no error if flag doesn\'t exist', async () => {
@@ -405,7 +406,7 @@ describe('Actions', () => {
           },
         },
       }
-      await expect(runner.start(dialogue)).rejects.toThrow()
+      await expect(runner.start(dialogue)).rejects.toThrow('unknownAction')
     })
 
     it('fires actionExecuted event with result', async () => {
